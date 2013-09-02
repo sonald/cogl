@@ -284,8 +284,12 @@ cogl_sources_c = \
 	cogl-fence.c				\
 	cogl-fence-private.h
 
-cogl_glib_sources_h = cogl-glib-source.h
-cogl_glib_sources_c = cogl-glib-source.c
+cogl_glib_sources_h = \
+	cogl-glib-source.h \
+	cogl-gtype-private.h
+cogl_glib_sources_c = \
+	cogl-glib-source.c \
+	cogl-gtype.c
 
 cogl_xlib_sources_h = \
 	cogl-clutter-xlib.h \

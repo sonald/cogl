@@ -37,6 +37,9 @@
 #include "cogl-util.h"
 #include "cogl-color.h"
 #include "cogl-color-private.h"
+#include "cogl-gtype-private.h"
+
+COGL_GTYPE_DEFINE_BOXED (Color, color, cogl_color_copy, cogl_color_free);
 
 void
 cogl_color_init_from_4ub (CoglColor *color,

@@ -51,6 +51,7 @@
 #include "cogl-profile.h"
 #include "cogl-depth-state-private.h"
 #include "cogl-private.h"
+#include "cogl-gtype-private.h"
 
 #include <glib.h>
 #include <string.h>
@@ -94,6 +95,7 @@ _cogl_pipeline_progends[MAX (COGL_PIPELINE_N_PROGENDS, 1)];
 #endif
 
 COGL_OBJECT_DEFINE (Pipeline, pipeline);
+COGL_GTYPE_DEFINE_CLASS (Pipeline, pipeline);
 
 /*
  * This initializes the first pipeline owned by the Cogl context. All

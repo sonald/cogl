@@ -66,9 +66,7 @@
  *   inverse.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <config.h>
 
 #include <cogl-util.h>
 #include <cogl-debug.h>
@@ -77,17 +75,15 @@
 #include <cogl-matrix.h>
 #include <cogl-matrix-private.h>
 #include <cogl-quaternion-private.h>
+#include <cogl-gtype-private.h>
 
 #include <glib.h>
 #include <math.h>
 #include <string.h>
 
-#ifdef COGL_HAS_GTYPE_SUPPORT
-#include <cogl-gtype-private.h>
-COGL_GTYPE_DEFINE_BOXED ("Matrix", matrix,
+COGL_GTYPE_DEFINE_BOXED (Matrix, matrix,
                          cogl_matrix_copy,
                          cogl_matrix_free);
-#endif
 
 /*
  * Symbolic names to some of the entries in the matrix

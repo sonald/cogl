@@ -31,9 +31,7 @@
  *  Neil Roberts   <neil@linux.intel.com>
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include <config.h>
 
 #include "cogl-debug.h"
 #include "cogl-util.h"
@@ -51,13 +49,14 @@
 #include "cogl-sub-texture.h"
 #include "cogl-error-private.h"
 #include "cogl-texture-gl-private.h"
-#include "cogl-private.h"
+#include "cogl-gtype-private.h"
 
 #include <stdlib.h>
 
 static void _cogl_atlas_texture_free (CoglAtlasTexture *sub_tex);
 
 COGL_TEXTURE_DEFINE (AtlasTexture, atlas_texture);
+COGL_GTYPE_DEFINE_CLASS (AtlasTexture, atlas_texture);
 
 static const CoglTextureVtable cogl_atlas_texture_vtable;
 

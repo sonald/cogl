@@ -38,6 +38,10 @@
 #ifndef __COGL_SNIPPET_H__
 #define __COGL_SNIPPET_H__
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+#include <glib-object.h>
+#endif
+
 COGL_BEGIN_DECLS
 
 /**
@@ -330,6 +334,15 @@ COGL_BEGIN_DECLS
 typedef struct _CoglSnippet CoglSnippet;
 
 #define COGL_SNIPPET(OBJECT) ((CoglSnippet *)OBJECT)
+
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_snippet_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_snippet_get_gtype (void);
+#endif
 
 /* Enumeration of all the hook points that a snippet can be attached
    to within a pipeline. */

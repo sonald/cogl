@@ -58,6 +58,15 @@ DISTCLEANFILES += $(pc_files)
 cogl_experimental_h = \
 	$(NULL)
 
+cogl_additional_experimental_h = \
+	$(srcdir)/cogl-bitmap.h			\
+	$(srcdir)/cogl-color.h			\
+	$(srcdir)/cogl-matrix.h			\
+	$(srcdir)/cogl-texture.h		\
+	$(srcdir)/cogl-types.h			\
+	$(srcdir)/cogl-gtype-private.h		\
+	$(NULL)
+
 cogl_nodist_experimental_h = \
 	$(NULL)
 
@@ -134,7 +143,7 @@ if USE_GLIB
 # glib-mkenums rules
 glib_enum_h = cogl-enum-types.h
 glib_enum_c = cogl-enum-types.c
-glib_enum_headers = $(cogl_public_h)
+glib_enum_headers = $(addprefix $(srcdir)/, $(cogl_public_h))
 include $(top_srcdir)/build/autotools/Makefile.am.enums
 endif
 
