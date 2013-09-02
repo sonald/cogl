@@ -40,6 +40,10 @@ typedef struct _CoglPrimitive CoglPrimitive;
 #include <cogl/cogl-attribute.h>
 #include <cogl/cogl-framebuffer.h>
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+#include <glib-object.h>
+#endif
+
 COGL_BEGIN_DECLS
 
 /**
@@ -49,6 +53,15 @@ COGL_BEGIN_DECLS
  *
  * FIXME
  */
+
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_primitive_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_primitive_get_gtype (void);
+#endif
 
 /**
  * CoglVertexP2:
@@ -265,7 +278,6 @@ cogl_primitive_new_with_attributes (CoglVerticesMode mode,
  * @mode: A #CoglVerticesMode defining how to draw the vertices
  * @n_vertices: The number of vertices to read from @data and also
  *              the number of vertices to read when later drawing.
-
  * @data: (array length=n_vertices): (type Cogl.VertexP2): An array
  *        of #CoglVertexP2 vertices
  *

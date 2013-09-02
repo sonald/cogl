@@ -33,6 +33,10 @@
 
 #include <cogl/cogl-context.h>
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+#include <glib-object.h>
+#endif
+
 COGL_BEGIN_DECLS
 
 /**
@@ -46,6 +50,15 @@ COGL_BEGIN_DECLS
 #define COGL_INDEX_BUFFER(buffer) ((CoglIndexBuffer*) buffer)
 
 typedef struct _CoglIndexBuffer	      CoglIndexBuffer;
+
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_index_buffer_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_index_buffer_get_gtype (void);
+#endif
 
 /**
  * cogl_index_buffer_new:

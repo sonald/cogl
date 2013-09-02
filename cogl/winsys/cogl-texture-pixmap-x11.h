@@ -43,6 +43,10 @@
 
 #include <cogl/cogl-context.h>
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+#include <glib-object.h>
+#endif
+
 COGL_BEGIN_DECLS
 
 #ifdef COGL_ENABLE_EXPERIMENTAL_API
@@ -60,6 +64,15 @@ COGL_BEGIN_DECLS
 typedef struct _CoglTexturePixmapX11 CoglTexturePixmapX11;
 
 #define COGL_TEXTURE_PIXMAP_X11(X) ((CoglTexturePixmapX11 *)X)
+
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_texture_pixmap_x11_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_texture_pixmap_x11_get_gtype (void);
+#endif
 
 typedef enum
 {
