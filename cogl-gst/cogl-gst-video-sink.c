@@ -159,6 +159,7 @@ typedef struct _CoglGstRenderer
                           CoglPipeline *pipeline);
   CoglBool (*upload) (CoglGstVideoSink *sink,
                       GstBuffer *buffer);
+  void (*shutdown) (CoglGstVideoSink *sink);
 } CoglGstRenderer;
 
 struct _CoglGstVideoSinkPrivate
@@ -966,6 +967,15 @@ clear_frame_textures (CoglGstVideoSink *sink)
   priv->frame_dirty = TRUE;
 }
 
+/**/
+
+static void
+cogl_gst_dummy_shutdown (CoglGstVideoSink *sink)
+{
+}
+
+/**/
+
 static inline CoglBool
 is_pot (unsigned int number)
 {
@@ -1127,6 +1137,7 @@ static CoglGstRenderer rgb24_renderer =
   1, /* n_layers */
   cogl_gst_rgb24_setup_pipeline,
   cogl_gst_rgb24_upload,
+  cogl_gst_dummy_shutdown,
 };
 
 static void
@@ -1239,6 +1250,7 @@ static CoglGstRenderer rgb32_renderer =
   2, /* n_layers */
   cogl_gst_rgb32_setup_pipeline,
   cogl_gst_rgb32_upload,
+  cogl_gst_dummy_shutdown,
 };
 
 static CoglBool
@@ -1386,6 +1398,7 @@ static CoglGstRenderer yv12_glsl_renderer =
   3, /* n_layers */
   cogl_gst_yv12_glsl_setup_pipeline,
   cogl_gst_yv12_upload,
+  cogl_gst_dummy_shutdown,
 };
 
 static CoglGstRenderer i420_glsl_renderer =
@@ -1398,6 +1411,7 @@ static CoglGstRenderer i420_glsl_renderer =
   3, /* n_layers */
   cogl_gst_yv12_glsl_setup_pipeline,
   cogl_gst_i420_upload,
+  cogl_gst_dummy_shutdown,
 };
 
 static void
@@ -1480,6 +1494,7 @@ static CoglGstRenderer ayuv_glsl_renderer =
   1, /* n_layers */
   cogl_gst_ayuv_glsl_setup_pipeline,
   cogl_gst_ayuv_upload,
+  cogl_gst_dummy_shutdown,
 };
 
 static void
@@ -1573,6 +1588,7 @@ static CoglGstRenderer nv12_glsl_renderer =
   2, /* n_layers */
   cogl_gst_nv12_glsl_setup_pipeline,
   cogl_gst_nv12_upload,
+  cogl_gst_dummy_shutdown,
 };
 
 static GSList*
@@ -1990,6 +2006,11 @@ cogl_gst_video_sink_dispose (GObject *object)
   priv = self->priv;
 
   clear_frame_textures (self);
+
+  if (priv->renderer) {
+    priv->renderer->shutdown (self);
+    priv->renderer = NULL;
+  }
 
   if (priv->pipeline)
     {
