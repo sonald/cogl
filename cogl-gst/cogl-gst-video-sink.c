@@ -568,11 +568,12 @@ cogl_gst_rgb24_upload (CoglGstVideoSink *sink,
 
   clear_frame_textures (sink);
 
-  priv->frame[0] = video_texture_new_from_data (priv->ctx, priv->info.width,
-                                                priv->info.height,
+  priv->frame[0] = video_texture_new_from_data (priv->ctx,
+                                                GST_VIDEO_FRAME_COMP_WIDTH (&frame, 0),
+                                                GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 0),
                                                 format,
-                                                priv->info.stride[0],
-                                                frame.data[0]);
+                                                GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 0),
+                                                GST_VIDEO_FRAME_PLANE_DATA (&frame, 0));
 
   gst_video_frame_unmap (&frame);
 
@@ -676,11 +677,12 @@ cogl_gst_rgb32_upload (CoglGstVideoSink *sink,
 
   clear_frame_textures (sink);
 
-  priv->frame[0] = video_texture_new_from_data (priv->ctx, priv->info.width,
-                                                priv->info.height,
+  priv->frame[0] = video_texture_new_from_data (priv->ctx,
+                                                GST_VIDEO_FRAME_COMP_WIDTH (&frame, 0),
+                                                GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 0),
                                                 format,
-                                                priv->info.stride[0],
-                                                frame.data[0]);
+                                                GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 0),
+                                                GST_VIDEO_FRAME_PLANE_DATA (&frame, 0));
 
   gst_video_frame_unmap (&frame);
 
@@ -730,24 +732,27 @@ cogl_gst_yv12_upload (CoglGstVideoSink *sink,
 
   priv->frame[0] =
     video_texture_new_from_data (priv->ctx,
-                                 GST_VIDEO_INFO_COMP_WIDTH (&priv->info, 0),
-                                 GST_VIDEO_INFO_COMP_HEIGHT (&priv->info, 0),
+                                 GST_VIDEO_FRAME_COMP_WIDTH (&frame, 0),
+                                 GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 0),
                                  format,
-                                 priv->info.stride[0], frame.data[0]);
+                                 GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 0),
+                                 GST_VIDEO_FRAME_PLANE_DATA (&frame, 0));
 
   priv->frame[2] =
     video_texture_new_from_data (priv->ctx,
-                                 GST_VIDEO_INFO_COMP_WIDTH (&priv->info, 1),
-                                 GST_VIDEO_INFO_COMP_HEIGHT (&priv->info, 1),
+                                 GST_VIDEO_FRAME_COMP_WIDTH (&frame, 1),
+                                 GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 1),
                                  format,
-                                 priv->info.stride[1], frame.data[1]);
+                                 GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 1),
+                                 GST_VIDEO_FRAME_PLANE_DATA (&frame, 1));
 
   priv->frame[1] =
     video_texture_new_from_data (priv->ctx,
-                                 GST_VIDEO_INFO_COMP_WIDTH (&priv->info, 2),
-                                 GST_VIDEO_INFO_COMP_HEIGHT (&priv->info, 2),
+                                 GST_VIDEO_FRAME_COMP_WIDTH (&frame, 2),
+                                 GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 2),
                                  format,
-                                 priv->info.stride[2], frame.data[2]);
+                                 GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 2),
+                                 GST_VIDEO_FRAME_PLANE_DATA (&frame, 2));
 
   gst_video_frame_unmap (&frame);
 
@@ -775,24 +780,27 @@ cogl_gst_i420_upload (CoglGstVideoSink *sink,
 
   priv->frame[0] =
     video_texture_new_from_data (priv->ctx,
-                                 GST_VIDEO_INFO_COMP_WIDTH (&priv->info, 0),
-                                 GST_VIDEO_INFO_COMP_HEIGHT (&priv->info, 0),
+                                 GST_VIDEO_FRAME_COMP_WIDTH (&frame, 0),
+                                 GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 0),
                                  format,
-                                 priv->info.stride[0], frame.data[0]);
+                                 GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 0),
+                                 GST_VIDEO_FRAME_PLANE_DATA (&frame, 0));
 
   priv->frame[1] =
     video_texture_new_from_data (priv->ctx,
-                                 GST_VIDEO_INFO_COMP_WIDTH (&priv->info, 1),
-                                 GST_VIDEO_INFO_COMP_HEIGHT (&priv->info, 1),
+                                 GST_VIDEO_FRAME_COMP_WIDTH (&frame, 1),
+                                 GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 1),
                                  format,
-                                 priv->info.stride[1], frame.data[1]);
+                                 GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 1),
+                                 GST_VIDEO_FRAME_PLANE_DATA (&frame, 1));
 
   priv->frame[2] =
     video_texture_new_from_data (priv->ctx,
-                                 GST_VIDEO_INFO_COMP_WIDTH (&priv->info, 2),
-                                 GST_VIDEO_INFO_COMP_HEIGHT (&priv->info, 2),
+                                 GST_VIDEO_FRAME_COMP_WIDTH (&frame, 2),
+                                 GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 2),
                                  format,
-                                 priv->info.stride[2], frame.data[2]);
+                                 GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 2),
+                                 GST_VIDEO_FRAME_PLANE_DATA (&frame, 2));
 
   gst_video_frame_unmap (&frame);
 
@@ -920,11 +928,12 @@ cogl_gst_ayuv_upload (CoglGstVideoSink *sink,
 
   clear_frame_textures (sink);
 
-  priv->frame[0] = video_texture_new_from_data (priv->ctx, priv->info.width,
-                                                priv->info.height,
+  priv->frame[0] = video_texture_new_from_data (priv->ctx,
+                                                GST_VIDEO_FRAME_COMP_WIDTH (&frame, 0),
+                                                GST_VIDEO_FRAME_COMP_HEIGHT (&frame, 0),
                                                 format,
-                                                priv->info.stride[0],
-                                                frame.data[0]);
+                                                GST_VIDEO_FRAME_PLANE_STRIDE (&frame, 0),
+                                                GST_VIDEO_FRAME_PLANE_DATA (&frame, 0));
 
   gst_video_frame_unmap (&frame);
 
@@ -1539,6 +1548,20 @@ cogl_gst_video_sink_stop (GstBaseSink *base_sink)
   return TRUE;
 }
 
+static gboolean
+cogl_gst_video_sink_propose_allocation (GstBaseSink *base_sink, GstQuery *query)
+{
+  gboolean need_pool = FALSE;
+  GstCaps *caps = NULL;
+
+  gst_query_parse_allocation (query, &caps, &need_pool);
+
+  gst_query_add_allocation_meta (query,
+                                 GST_VIDEO_META_API_TYPE, NULL);
+
+  return TRUE;
+}
+
 static void
 cogl_gst_video_sink_class_init (CoglGstVideoSinkClass *klass)
 {
@@ -1573,6 +1596,7 @@ cogl_gst_video_sink_class_init (CoglGstVideoSinkClass *klass)
   gb_class->stop = cogl_gst_video_sink_stop;
   gb_class->set_caps = cogl_gst_video_sink_set_caps;
   gb_class->get_caps = cogl_gst_video_sink_get_caps;
+  gb_class->propose_allocation = cogl_gst_video_sink_propose_allocation;
 
   pspec = g_param_spec_int ("update-priority",
                             "Update Priority",
