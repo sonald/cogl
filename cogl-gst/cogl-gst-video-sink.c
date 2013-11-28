@@ -70,7 +70,8 @@
   (G_PARAM_READABLE | G_PARAM_WRITABLE | COGL_GST_PARAM_STATIC)
 
 static const char cogl_gst_video_sink_caps_str[] =
-  GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY, BASE_SINK_CAPS);
+  GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY, BASE_SINK_CAPS)
+  ";" GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_META_GST_VIDEO_GL_TEXTURE_UPLOAD_META, "RGBA");
 
 static GstStaticPadTemplate sinktemplate_all =
   GST_STATIC_PAD_TEMPLATE ("sink",
@@ -159,6 +160,8 @@ typedef struct _CoglGstRenderer
                           CoglPipeline *pipeline);
   CoglBool (*upload) (CoglGstVideoSink *sink,
                       GstBuffer *buffer);
+  CoglBool (*upload_gl) (CoglGstVideoSink *sink,
+                         GstBuffer *buffer);
   void (*shutdown) (CoglGstVideoSink *sink);
 } CoglGstRenderer;
 
@@ -969,6 +972,12 @@ clear_frame_textures (CoglGstVideoSink *sink)
 
 /**/
 
+static CoglBool
+cogl_gst_dummy_upload_gl (CoglGstVideoSink *sink, GstBuffer *buffer)
+{
+  return FALSE;
+}
+
 static void
 cogl_gst_dummy_shutdown (CoglGstVideoSink *sink)
 {
@@ -1125,6 +1134,8 @@ static CoglGstRenderer rgb24_glsl_renderer =
   1, /* n_layers */
   cogl_gst_rgb24_glsl_setup_pipeline,
   cogl_gst_rgb24_upload,
+  cogl_gst_dummy_upload_gl,
+  cogl_gst_dummy_shutdown,
 };
 
 static CoglGstRenderer rgb24_renderer =
@@ -1137,6 +1148,7 @@ static CoglGstRenderer rgb24_renderer =
   1, /* n_layers */
   cogl_gst_rgb24_setup_pipeline,
   cogl_gst_rgb24_upload,
+  cogl_gst_dummy_upload_gl,
   cogl_gst_dummy_shutdown,
 };
 
@@ -1228,6 +1240,52 @@ map_fail:
   }
 }
 
+static CoglBool
+cogl_gst_rgb32_upload_gl (CoglGstVideoSink *sink,
+                          GstBuffer *buffer)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  GstVideoGLTextureUploadMeta *upload_meta;
+  guint gl_handle[1];
+
+  clear_frame_textures (sink);
+
+  upload_meta = gst_buffer_get_video_gl_texture_upload_meta (buffer);
+  if (!upload_meta) {
+    GST_WARNING ("Buffer does not support GLTextureUploadMeta API");
+    return FALSE;
+  }
+
+  if (upload_meta->n_textures != priv->renderer->n_layers ||
+      upload_meta->texture_type[0] != GST_VIDEO_GL_TEXTURE_TYPE_RGBA) {
+    GST_WARNING ("cogl-gst-video-sink only supports gl upload in a single RGBA texture");
+    return FALSE;
+  }
+
+  priv->frame[0] = COGL_TEXTURE (cogl_texture_2d_new_with_size (priv->ctx,
+                                                                priv->info.width,
+                                                                priv->info.height));
+
+  cogl_texture_set_components (priv->frame[0], COGL_TEXTURE_COMPONENTS_RGBA);
+
+  if (!cogl_texture_allocate (priv->frame[0], NULL)) {
+    GST_WARNING ("Couldn't allocate cogl texture");
+    return FALSE;
+  }
+
+  if (!cogl_texture_get_gl_texture (priv->frame[0], &gl_handle[0], NULL)) {
+    GST_WARNING ("Couldn't get gl texture");
+    return FALSE;
+  }
+
+  if (!gst_video_gl_texture_upload_meta_upload (upload_meta, gl_handle)) {
+    GST_WARNING ("GL texture upload failed");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 static CoglGstRenderer rgb32_glsl_renderer =
 {
   "RGB 32",
@@ -1238,6 +1296,8 @@ static CoglGstRenderer rgb32_glsl_renderer =
   1, /* n_layers */
   cogl_gst_rgb32_glsl_setup_pipeline,
   cogl_gst_rgb32_upload,
+  cogl_gst_rgb32_upload_gl,
+  cogl_gst_dummy_shutdown,
 };
 
 static CoglGstRenderer rgb32_renderer =
@@ -1246,10 +1306,13 @@ static CoglGstRenderer rgb32_renderer =
   COGL_GST_RGB32,
   0,
   GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
-                                                     "{ RGBA, BGRA }")),
+                                                     "{ RGBA, BGRA }")
+                   ";" GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_META_GST_VIDEO_GL_TEXTURE_UPLOAD_META,
+                                                         "RGBA")),
   2, /* n_layers */
   cogl_gst_rgb32_setup_pipeline,
   cogl_gst_rgb32_upload,
+  cogl_gst_dummy_upload_gl,
   cogl_gst_dummy_shutdown,
 };
 
@@ -1398,6 +1461,7 @@ static CoglGstRenderer yv12_glsl_renderer =
   3, /* n_layers */
   cogl_gst_yv12_glsl_setup_pipeline,
   cogl_gst_yv12_upload,
+  cogl_gst_dummy_upload_gl,
   cogl_gst_dummy_shutdown,
 };
 
@@ -1411,6 +1475,7 @@ static CoglGstRenderer i420_glsl_renderer =
   3, /* n_layers */
   cogl_gst_yv12_glsl_setup_pipeline,
   cogl_gst_i420_upload,
+  cogl_gst_dummy_upload_gl,
   cogl_gst_dummy_shutdown,
 };
 
@@ -1494,6 +1559,7 @@ static CoglGstRenderer ayuv_glsl_renderer =
   1, /* n_layers */
   cogl_gst_ayuv_glsl_setup_pipeline,
   cogl_gst_ayuv_upload,
+  cogl_gst_dummy_upload_gl,
   cogl_gst_dummy_shutdown,
 };
 
@@ -1588,6 +1654,7 @@ static CoglGstRenderer nv12_glsl_renderer =
   2, /* n_layers */
   cogl_gst_nv12_glsl_setup_pipeline,
   cogl_gst_nv12_upload,
+  cogl_gst_dummy_upload_gl,
   cogl_gst_dummy_shutdown,
 };
 
@@ -1877,8 +1944,14 @@ cogl_gst_source_dispatch (GSource *source,
 
   if (buffer)
     {
-      if (!priv->renderer->upload (gst_source->sink, buffer))
-        goto fail_upload;
+      if (gst_buffer_get_video_gl_texture_upload_meta (buffer) != NULL) {
+        if (!priv->renderer->upload_gl (gst_source->sink, buffer)) {
+          goto fail_upload;
+        }
+      } else {
+        if (!priv->renderer->upload (gst_source->sink, buffer))
+          goto fail_upload;
+      }
 
       priv->had_upload_once = TRUE;
 
@@ -2133,6 +2206,8 @@ cogl_gst_video_sink_propose_allocation (GstBaseSink *base_sink, GstQuery *query)
 
   gst_query_add_allocation_meta (query,
                                  GST_VIDEO_META_API_TYPE, NULL);
+  gst_query_add_allocation_meta (query,
+                                 GST_VIDEO_GL_TEXTURE_UPLOAD_META_API_TYPE, NULL);
 
   return TRUE;
 }
