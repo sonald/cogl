@@ -189,7 +189,7 @@ COGL_WINSYS_FEATURE_END ()
 COGL_WINSYS_FEATURE_BEGIN (255, 255,
                            create_context,
                            "ARB\0",
-                           "create_context",
+                           "create_context\0",
                            0,
                            0)
 COGL_WINSYS_FEATURE_FUNCTION (GLXContext, glXCreateContextAttribs,
