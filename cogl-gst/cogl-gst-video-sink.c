@@ -34,6 +34,7 @@
 #include <gst/video/video.h>
 #include <gst/riff/riff-ids.h>
 #include <string.h>
+#include <math.h>
 
 #include "cogl-gtype-private.h"
 
@@ -76,7 +77,12 @@ static GstStaticPadTemplate sinktemplate_all =
                            GST_PAD_ALWAYS,
                            GST_STATIC_CAPS (SINK_CAPS));
 
-G_DEFINE_TYPE (CoglGstVideoSink, cogl_gst_video_sink, GST_TYPE_BASE_SINK);
+static void color_balance_iface_init (GstColorBalanceInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (CoglGstVideoSink,
+                         cogl_gst_video_sink,
+                         GST_TYPE_BASE_SINK,
+                         G_IMPLEMENT_INTERFACE (GST_TYPE_COLOR_BALANCE, color_balance_iface_init))
 
 enum
 {
@@ -160,17 +166,31 @@ struct _CoglGstVideoSinkPrivate
   CoglPipeline *pipeline;
   CoglTexture *frame[3];
   CoglBool frame_dirty;
+  CoglBool had_upload_once;
+
   CoglGstVideoFormat format;
   CoglBool bgr;
+
   CoglGstSource *source;
   GSList *renderers;
   GstCaps *caps;
   CoglGstRenderer *renderer;
   GstFlowReturn flow_return;
   int custom_start;
+  int video_start;
   int free_layer;
   CoglBool default_sample;
   GstVideoInfo info;
+
+  gdouble brightness;
+  gdouble contrast;
+  gdouble hue;
+  gdouble saturation;
+  CoglBool balance_dirty;
+
+  guint8 *tabley;
+  guint8 *tableu;
+  guint8 *tablev;
 };
 
 /* GTypes */
@@ -212,7 +232,7 @@ get_layer_cache_entry (CoglGstVideoSink *sink,
     {
       SnippetCacheEntry *entry = l->data;
 
-      if (entry->start_position == priv->custom_start)
+      if (entry->start_position == priv->video_start)
         return entry;
     }
 
@@ -228,7 +248,7 @@ add_layer_cache_entry (CoglGstVideoSink *sink,
   SnippetCacheEntry *entry = g_slice_new (SnippetCacheEntry);
   char *default_source;
 
-  entry->start_position = priv->custom_start;
+  entry->start_position = priv->video_start;
 
   entry->vertex_snippet =
     cogl_snippet_new (COGL_SNIPPET_HOOK_VERTEX_GLOBALS,
@@ -242,8 +262,8 @@ add_layer_cache_entry (CoglGstVideoSink *sink,
   default_source =
     g_strdup_printf ("  cogl_layer *= cogl_gst_sample_video%i "
                      "(cogl_tex_coord%i_in.st);\n",
-                     priv->custom_start,
-                     priv->custom_start);
+                     priv->video_start,
+                     priv->video_start);
   entry->default_sample_snippet =
     cogl_snippet_new (COGL_SNIPPET_HOOK_LAYER_FRAGMENT,
                       NULL, /* declarations */
@@ -317,19 +337,214 @@ setup_pipeline_from_cache_entry (CoglGstVideoSink *sink,
        * the intermediate textures */
       for (i = 0; i < n_layers; i++) {
         cogl_pipeline_set_layer_combine (pipeline,
-                                         priv->custom_start + i,
+                                         priv->video_start + i,
                                          "RGBA=REPLACE(PREVIOUS)",
                                          NULL);
       }
 
       if (priv->default_sample) {
         cogl_pipeline_add_layer_snippet (pipeline,
-                                         priv->custom_start + n_layers - 1,
+                                         priv->video_start + n_layers - 1,
                                          cache_entry->default_sample_snippet);
       }
     }
 
   priv->frame_dirty = TRUE;
+}
+
+/* Color balance */
+
+#define DEFAULT_BRIGHTNESS (0.0f)
+#define DEFAULT_CONTRAST   (1.0f)
+#define DEFAULT_HUE        (0.0f)
+#define DEFAULT_SATURATION (1.0f)
+
+static CoglBool
+cogl_gst_video_sink_needs_color_balance_shader (CoglGstVideoSink *sink)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+
+  return (priv->brightness != DEFAULT_BRIGHTNESS ||
+          priv->contrast != DEFAULT_CONTRAST ||
+          priv->hue != DEFAULT_HUE ||
+          priv->saturation != DEFAULT_SATURATION);
+}
+
+static void
+cogl_gst_video_sink_color_balance_update_tables (CoglGstVideoSink *sink)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  gint i, j;
+  gdouble y, u, v, hue_cos, hue_sin;
+
+  /* Y */
+  for (i = 0; i < 256; i++) {
+    y = 16 + ((i - 16) * priv->contrast + priv->brightness * 255);
+    if (y < 0)
+      y = 0;
+    else if (y > 255)
+      y = 255;
+    priv->tabley[i] = rint (y);
+  }
+
+  hue_cos = cos (G_PI * priv->hue);
+  hue_sin = sin (G_PI * priv->hue);
+
+  /* U/V lookup tables are 2D, since we need both U/V for each table
+   * separately. */
+  for (i = -128; i < 128; i++) {
+    for (j = -128; j < 128; j++) {
+      u = 128 + ((i * hue_cos + j * hue_sin) * priv->saturation);
+      v = 128 + ((-i * hue_sin + j * hue_cos) * priv->saturation);
+      if (u < 0)
+        u = 0;
+      else if (u > 255)
+        u = 255;
+      if (v < 0)
+        v = 0;
+      else if (v > 255)
+        v = 255;
+      priv->tableu[(i + 128) * 256 + j + 128] = rint (u);
+      priv->tablev[(i + 128) * 256 + j + 128] = rint (v);
+    }
+  }
+}
+
+static const GList *
+cogl_gst_video_sink_color_balance_list_channels (GstColorBalance *balance)
+{
+  static GList *channels = NULL;
+
+  if (channels == NULL) {
+    const gchar *str_channels[4] = { "HUE", "SATURATION",
+                                     "BRIGHTNESS", "CONTRAST"
+    };
+    gint i;
+
+    for (i = 0; i < G_N_ELEMENTS (str_channels); i++) {
+      GstColorBalanceChannel *channel;
+
+      channel = g_object_new (GST_TYPE_COLOR_BALANCE_CHANNEL, NULL);
+      channel->label = g_strdup (str_channels[i]);
+      channel->min_value = -1000;
+      channel->max_value = 1000;
+      channels = g_list_append (channels, channel);
+    }
+  }
+
+  return channels;
+}
+
+static gboolean
+cogl_gst_video_sink_get_variable (CoglGstVideoSink *sink,
+                                  const gchar *variable,
+                                  gdouble *minp,
+                                  gdouble *maxp,
+                                  gdouble **valuep)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  gdouble min, max, *value;
+
+  if (!g_strcmp0 (variable, "BRIGHTNESS"))
+    {
+      min = -1.0;
+      max = 1.0;
+      value = &priv->brightness;
+    }
+  else if (!g_strcmp0 (variable, "CONTRAST"))
+    {
+      min = 0.0;
+      max = 2.0;
+      value = &priv->contrast;
+    }
+  else if (!g_strcmp0 (variable, "HUE"))
+    {
+      min = -1.0;
+      max = 1.0;
+      value = &priv->hue;
+    }
+  else if (!g_strcmp0 (variable, "SATURATION"))
+    {
+      min = 0.0;
+      max = 2.0;
+      value = &priv->saturation;
+    }
+  else
+    {
+      GST_WARNING_OBJECT (sink, "color balance parameter not supported %s",
+                          variable);
+      return FALSE;
+    }
+
+  if (maxp)
+    *maxp = max;
+  if (minp)
+    *minp = min;
+  if (valuep)
+    *valuep = value;
+
+  return TRUE;
+}
+
+static void
+cogl_gst_video_sink_color_balance_set_value (GstColorBalance        *balance,
+                                             GstColorBalanceChannel *channel,
+                                             gint                    value)
+{
+  CoglGstVideoSink *sink = COGL_GST_VIDEO_SINK (balance);
+  gdouble *old_value, new_value, min, max;
+
+  if (!cogl_gst_video_sink_get_variable (sink, channel->label,
+                                         &min, &max, &old_value))
+    return;
+
+  new_value = (max - min) * ((gdouble) (value - channel->min_value) /
+                             (gdouble) (channel->max_value - channel->min_value))
+    + min;
+
+  if (new_value != *old_value)
+    {
+      *old_value = new_value;
+      sink->priv->balance_dirty = TRUE;
+
+      gst_color_balance_value_changed (GST_COLOR_BALANCE (balance), channel,
+                                       gst_color_balance_get_value (GST_COLOR_BALANCE (balance), channel));
+    }
+}
+
+static gint
+cogl_gst_video_sink_color_balance_get_value (GstColorBalance        *balance,
+                                             GstColorBalanceChannel *channel)
+{
+  CoglGstVideoSink *sink = COGL_GST_VIDEO_SINK (balance);
+  gdouble *old_value, min, max;
+  gint value;
+
+  if (!cogl_gst_video_sink_get_variable (sink, channel->label,
+                                         &min, &max, &old_value))
+    return 0;
+
+  value = (gint) (((*old_value + min) / (max - min)) *
+                  (channel->max_value - channel->min_value))
+    + channel->min_value;
+
+  return value;
+}
+
+static GstColorBalanceType
+cogl_gst_video_sink_color_balance_get_balance_type (GstColorBalance *balance)
+{
+  return GST_COLOR_BALANCE_HARDWARE;
+}
+
+static void
+color_balance_iface_init (GstColorBalanceInterface *iface)
+{
+  iface->list_channels = cogl_gst_video_sink_color_balance_list_channels;
+  iface->set_value = cogl_gst_video_sink_color_balance_set_value;
+  iface->get_value = cogl_gst_video_sink_color_balance_get_value;
+
+  iface->get_balance_type = cogl_gst_video_sink_color_balance_get_balance_type;
 }
 
 /**/
@@ -362,8 +577,124 @@ cogl_gst_video_sink_attach_frame (CoglGstVideoSink *sink,
 
   for (i = 0; i < G_N_ELEMENTS (priv->frame); i++)
     if (priv->frame[i] != NULL)
-      cogl_pipeline_set_layer_texture (pln, i + priv->custom_start,
+      cogl_pipeline_set_layer_texture (pln, i + priv->video_start,
                                        priv->frame[i]);
+}
+
+/* Color balance */
+
+static const gchar *no_color_balance_shader =
+  "#define cogl_gst_get_corrected_color_from_yuv(arg) (arg)\n"
+  "#define cogl_gst_get_corrected_color_from_rgb(arg) (arg)\n";
+
+static const gchar *color_balance_shader =
+  "vec3\n"
+  "cogl_gst_get_corrected_color_from_yuv (vec3 yuv)\n"
+  "{\n"
+  "  vec2 ruv = vec2 (yuv[2] + 0.5, yuv[1] + 0.5);\n"
+  "  return vec3 (texture2D (cogl_sampler%i, vec2 (yuv[0], 0)).a,\n"
+  "               texture2D (cogl_sampler%i, ruv).a - 0.5,\n"
+  "               texture2D (cogl_sampler%i, ruv).a - 0.5);\n"
+  "}\n"
+  "\n"
+  "vec3\n"
+  "cogl_gst_get_corrected_color_from_rgb (vec3 rgb)\n"
+  "{\n"
+  "  vec3 yuv = cogl_gst_yuv_srgb_to_bt601 (rgb);\n"
+  "  vec3 corrected_yuv = vec3 (texture2D (cogl_sampler%i, vec2 (yuv[0], 0)).a,\n"
+  "                             texture2D (cogl_sampler%i, vec2 (yuv[2], yuv[1])).a,\n"
+  "                             texture2D (cogl_sampler%i, vec2 (yuv[2], yuv[1])).a);\n"
+  "  return cogl_gst_yuv_bt601_to_srgb (corrected_yuv);\n"
+  "}\n";
+
+static void
+cogl_gst_video_sink_setup_balance (CoglGstVideoSink *sink,
+                                   CoglPipeline *pipeline)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  static SnippetCache snippet_cache;
+  static CoglSnippet *no_color_balance_snippet_vert = NULL,
+    *no_color_balance_snippet_frag = NULL;
+
+  GST_INFO_OBJECT (sink, "attaching correction b=%.3f/c=%.3f/h=%.3f/s=%.3f",
+                   priv->brightness, priv->contrast,
+                   priv->hue, priv->saturation);
+
+  if (cogl_gst_video_sink_needs_color_balance_shader (sink))
+    {
+      int i;
+      const guint8 *tables[3] = { priv->tabley, priv->tableu, priv->tablev };
+      const gint tables_sizes[3][2] = { { 256, 1 },
+                                        { 256, 256 },
+                                        { 256, 256 } };
+      SnippetCacheEntry *entry = get_layer_cache_entry (sink, &snippet_cache);
+
+      if (entry == NULL)
+        {
+          gchar *source = g_strdup_printf (color_balance_shader,
+                                           priv->custom_start,
+                                           priv->custom_start + 1,
+                                           priv->custom_start + 2,
+                                           priv->custom_start,
+                                           priv->custom_start + 1,
+                                           priv->custom_start + 2);
+
+          entry = add_layer_cache_entry (sink, &snippet_cache, source);
+          g_free (source);
+        }
+
+      cogl_pipeline_add_snippet (pipeline, entry->vertex_snippet);
+      cogl_pipeline_add_snippet (pipeline, entry->fragment_snippet);
+
+      cogl_gst_video_sink_color_balance_update_tables (sink);
+
+      for (i = 0; i < 3; i++)
+        {
+          CoglTexture *lut_texture =
+            cogl_texture_2d_new_from_data (priv->ctx,
+                                           tables_sizes[i][0],
+                                           tables_sizes[i][1],
+                                           COGL_PIXEL_FORMAT_A_8,
+                                           tables_sizes[i][0],
+                                           tables[i],
+                                           NULL);
+
+          cogl_pipeline_set_layer_filters (pipeline,
+                                           priv->custom_start + i,
+                                           COGL_PIPELINE_FILTER_LINEAR,
+                                           COGL_PIPELINE_FILTER_LINEAR);
+          cogl_pipeline_set_layer_combine (pipeline,
+                                           priv->custom_start + i,
+                                           "RGBA=REPLACE(PREVIOUS)",
+                                           NULL);
+          cogl_pipeline_set_layer_texture (pipeline,
+                                           priv->custom_start + i,
+                                           lut_texture);
+
+          cogl_object_unref (lut_texture);
+        }
+
+      priv->video_start = priv->custom_start + 3;
+    }
+  else
+    {
+      if (G_UNLIKELY (no_color_balance_snippet_vert == NULL))
+        {
+          no_color_balance_snippet_vert =
+            cogl_snippet_new (COGL_SNIPPET_HOOK_VERTEX_GLOBALS,
+                              no_color_balance_shader,
+                              NULL);
+          no_color_balance_snippet_frag =
+            cogl_snippet_new (COGL_SNIPPET_HOOK_FRAGMENT_GLOBALS,
+                              no_color_balance_shader,
+                              NULL);
+        }
+
+      cogl_pipeline_add_snippet (pipeline, no_color_balance_snippet_vert);
+      cogl_pipeline_add_snippet (pipeline, no_color_balance_snippet_frag);
+
+      priv->video_start = priv->custom_start;
+    }
 }
 
 /* YUV <-> RGB conversions */
@@ -488,7 +819,8 @@ cogl_gst_source_check (GSource *source)
 {
   CoglGstSource *gst_source = (CoglGstSource *) source;
 
-  return gst_source->buffer != NULL;
+  return (gst_source->buffer != NULL ||
+          gst_source->sink->priv->balance_dirty);
 }
 
 static void
@@ -508,7 +840,29 @@ dirty_default_pipeline (CoglGstVideoSink *sink)
     {
       cogl_object_unref (priv->pipeline);
       priv->pipeline = NULL;
+      priv->had_upload_once = FALSE;
     }
+}
+
+static int
+_cogl_gst_video_sink_get_video_layer (CoglGstVideoSink *sink)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+
+  if (cogl_gst_video_sink_needs_color_balance_shader (sink))
+    return priv->custom_start + 3;
+  return priv->custom_start;
+}
+
+static int
+_cogl_gst_video_sink_get_free_layer (CoglGstVideoSink *sink)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  int video_layer = _cogl_gst_video_sink_get_video_layer (sink);
+
+  if (priv->renderer)
+    return video_layer + priv->renderer->n_layers;
+  return video_layer;
 }
 
 void
@@ -522,9 +876,7 @@ cogl_gst_video_sink_set_first_layer (CoglGstVideoSink *sink,
       sink->priv->custom_start = first_layer;
       dirty_default_pipeline (sink);
 
-      if (sink->priv->renderer)
-        sink->priv->free_layer = (sink->priv->custom_start +
-                                  sink->priv->renderer->n_layers);
+      sink->priv->free_layer = _cogl_gst_video_sink_get_free_layer (sink);
     }
 }
 
@@ -550,6 +902,7 @@ cogl_gst_video_sink_setup_pipeline (CoglGstVideoSink *sink,
   if (sink->priv->renderer)
     {
       cogl_gst_video_sink_setup_conversions (sink, pipeline);
+      cogl_gst_video_sink_setup_balance (sink, pipeline);
       sink->priv->renderer->setup_pipeline (sink, pipeline);
     }
 }
@@ -568,7 +921,16 @@ cogl_gst_video_sink_get_pipeline (CoglGstVideoSink *vt)
       priv->pipeline = cogl_pipeline_new (priv->ctx);
       cogl_gst_video_sink_setup_pipeline (vt, priv->pipeline);
       cogl_gst_video_sink_attach_frame (vt, priv->pipeline);
-      priv->frame_dirty = FALSE;
+      priv->balance_dirty = FALSE;
+    }
+  else if (priv->balance_dirty)
+    {
+      cogl_object_unref (priv->pipeline);
+      priv->pipeline = cogl_pipeline_new (priv->ctx);
+
+      cogl_gst_video_sink_setup_pipeline (vt, priv->pipeline);
+      cogl_gst_video_sink_attach_frame (vt, priv->pipeline);
+      priv->balance_dirty = FALSE;
     }
   else if (priv->frame_dirty)
     {
@@ -577,8 +939,9 @@ cogl_gst_video_sink_get_pipeline (CoglGstVideoSink *vt)
       priv->pipeline = pipeline;
 
       cogl_gst_video_sink_attach_frame (vt, pipeline);
-      priv->frame_dirty = FALSE;
     }
+
+  priv->frame_dirty = FALSE;
 
   return priv->pipeline;
 }
@@ -683,7 +1046,9 @@ cogl_gst_rgb24_glsl_setup_pipeline (CoglGstVideoSink *sink,
         g_strdup_printf ("vec4\n"
                          "cogl_gst_sample_video%i (vec2 UV)\n"
                          "{\n"
-                         "  return texture2D (cogl_sampler%i, UV);\n"
+                         "  vec4 color = texture2D (cogl_sampler%i, UV);\n"
+                         "  vec3 corrected = cogl_gst_get_corrected_color_from_rgb (color.rgb);\n"
+                         "  return vec4(corrected.rgb, color.a);\n"
                          "}\n",
                          priv->custom_start,
                          priv->custom_start);
@@ -777,9 +1142,10 @@ cogl_gst_rgb32_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          "cogl_gst_sample_video%i (vec2 UV)\n"
                          "{\n"
                          "  vec4 color = texture2D (cogl_sampler%i, UV);\n"
+                         "  vec3 corrected = cogl_gst_get_corrected_color_from_rgb (color.rgb);\n"
                          /* Premultiply the color */
-                         "  color.rgb *= color.a;\n"
-                         "  return color;\n"
+                         "  corrected.rgb *= color.a;\n"
+                         "  return vec4(corrected.rgb, color.a);\n"
                          "}\n",
                          priv->custom_start,
                          priv->custom_start);
@@ -983,19 +1349,19 @@ cogl_gst_yv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
         g_strdup_printf ("vec4\n"
                          "cogl_gst_sample_video%i (vec2 UV)\n"
                          "{\n"
-                         "  float y = 1.1640625 * "
-                         "(texture2D (cogl_sampler%i, UV).a - 0.0625);\n"
+                         "  float y = 1.1640625 * (texture2D (cogl_sampler%i, UV).a - 0.0625);\n"
                          "  float u = texture2D (cogl_sampler%i, UV).a - 0.5;\n"
                          "  float v = texture2D (cogl_sampler%i, UV).a - 0.5;\n"
+                         "  vec3 corrected = cogl_gst_get_corrected_color_from_yuv (vec3 (y, u, v));\n"
                          "  vec4 color;\n"
-                         "  color.rgb = cogl_gst_default_yuv_to_srgb (vec3(y, u, v));\n"
+                         "  color.rgb = cogl_gst_default_yuv_to_srgb (corrected);\n"
                          "  color.a = 1.0;\n"
                          "  return color;\n"
                          "}\n",
-                         priv->custom_start,
-                         priv->custom_start,
-                         priv->custom_start + 1,
-                         priv->custom_start + 2);
+                         priv->video_start,
+                         priv->video_start,
+                         priv->video_start + 1,
+                         priv->video_start + 2);
 
       entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
@@ -1048,13 +1414,15 @@ cogl_gst_ayuv_glsl_setup_pipeline (CoglGstVideoSink *sink,
                            "  float y = 1.1640625 * (color.g - 0.0625);\n"
                            "  float u = color.b - 0.5;\n"
                            "  float v = color.a - 0.5;\n"
+                           "  vec3 corrected = cogl_gst_get_corrected_color_from_yuv (vec3 (y, u, v));\n"
                            "  color.a = color.r;\n"
-                           "  color.rgb = cogl_gst_default_yuv_to_srgb (vec3(y, u, v));\n"
+                           "  color.rgb = cogl_gst_default_yuv_to_srgb (corrected);\n"
                            /* Premultiply the color */
                            "  color.rgb *= color.a;\n"
                            "  return color;\n"
-                           "}\n", priv->custom_start,
-                           priv->custom_start);
+                           "}\n",
+                           priv->video_start,
+                           priv->video_start);
 
       entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
@@ -1131,7 +1499,8 @@ cogl_gst_nv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          "  uv -= 0.5;\n"
                          "  float u = uv.x;\n"
                          "  float v = uv.y;\n"
-                         "  color.rgb = cogl_gst_default_yuv_to_srgb (vec3(y, u, v));\n"
+                         "  vec3 corrected = cogl_gst_get_corrected_color_from_yuv (vec3 (y, u, v));\n"
+                         "  color.rgb = cogl_gst_default_yuv_to_srgb (corrected);\n"
                          "  color.a = 1.0;\n"
                          "  return color;\n"
                          "}\n",
@@ -1465,7 +1834,7 @@ cogl_gst_source_dispatch (GSource *source,
         goto negotiation_fail;
 
       gst_source->has_new_caps = FALSE;
-      priv->free_layer = priv->custom_start + priv->renderer->n_layers;
+      priv->free_layer = _cogl_gst_video_sink_get_free_layer (gst_source->sink);
 
       dirty_default_pipeline (gst_source->sink);
 
@@ -1486,6 +1855,8 @@ cogl_gst_source_dispatch (GSource *source,
       if (!priv->renderer->upload (gst_source->sink, buffer))
         goto fail_upload;
 
+      priv->had_upload_once = TRUE;
+
       gst_buffer_unref (buffer);
     }
   else
@@ -1495,9 +1866,10 @@ cogl_gst_source_dispatch (GSource *source,
     g_signal_emit (gst_source->sink,
                    video_sink_signals[PIPELINE_READY_SIGNAL],
                    0 /* detail */);
-  g_signal_emit (gst_source->sink,
-                 video_sink_signals[NEW_FRAME_SIGNAL], 0,
-                 NULL);
+  if (priv->had_upload_once)
+    g_signal_emit (gst_source->sink,
+                   video_sink_signals[NEW_FRAME_SIGNAL], 0,
+                   NULL);
 
   return TRUE;
 
@@ -1558,6 +1930,15 @@ cogl_gst_video_sink_init (CoglGstVideoSink *sink)
                                                    CoglGstVideoSinkPrivate);
   priv->custom_start = 0;
   priv->default_sample = TRUE;
+
+  priv->brightness = DEFAULT_BRIGHTNESS;
+  priv->contrast = DEFAULT_CONTRAST;
+  priv->hue = DEFAULT_HUE;
+  priv->saturation = DEFAULT_SATURATION;
+
+  priv->tabley = g_new0 (guint8, 256);
+  priv->tableu = g_new0 (guint8, 256 * 256);
+  priv->tablev = g_new0 (guint8, 256 * 256);
 }
 
 static GstFlowReturn
@@ -1611,6 +1992,24 @@ cogl_gst_video_sink_dispose (GObject *object)
     {
       gst_caps_unref (priv->caps);
       priv->caps = NULL;
+    }
+
+  if (priv->tabley)
+    {
+      g_free (priv->tabley);
+      priv->tabley = NULL;
+    }
+
+  if (priv->tableu)
+    {
+      g_free (priv->tableu);
+      priv->tableu = NULL;
+    }
+
+  if (priv->tablev)
+    {
+      g_free (priv->tablev);
+      priv->tablev = NULL;
     }
 
   G_OBJECT_CLASS (cogl_gst_video_sink_parent_class)->dispose (object);
