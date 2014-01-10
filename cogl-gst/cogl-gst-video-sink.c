@@ -199,6 +199,139 @@ COGL_GTYPE_DEFINE_BOXED (GstRectangle,
                          cogl_gst_rectangle_copy,
                          cogl_gst_rectangle_free);
 
+/* Snippet cache */
+
+static SnippetCacheEntry *
+get_layer_cache_entry (CoglGstVideoSink *sink,
+                       SnippetCache *cache)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  GList *l;
+
+  for (l = cache->entries.head; l; l = l->next)
+    {
+      SnippetCacheEntry *entry = l->data;
+
+      if (entry->start_position == priv->custom_start)
+        return entry;
+    }
+
+  return NULL;
+}
+
+static SnippetCacheEntry *
+add_layer_cache_entry (CoglGstVideoSink *sink,
+                       SnippetCache *cache,
+                       const char *decl)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  SnippetCacheEntry *entry = g_slice_new (SnippetCacheEntry);
+  char *default_source;
+
+  entry->start_position = priv->custom_start;
+
+  entry->vertex_snippet =
+    cogl_snippet_new (COGL_SNIPPET_HOOK_VERTEX_GLOBALS,
+                      decl,
+                      NULL /* post */);
+  entry->fragment_snippet =
+    cogl_snippet_new (COGL_SNIPPET_HOOK_FRAGMENT_GLOBALS,
+                      decl,
+                      NULL /* post */);
+
+  default_source =
+    g_strdup_printf ("  cogl_layer *= cogl_gst_sample_video%i "
+                     "(cogl_tex_coord%i_in.st);\n",
+                     priv->custom_start,
+                     priv->custom_start);
+  entry->default_sample_snippet =
+    cogl_snippet_new (COGL_SNIPPET_HOOK_LAYER_FRAGMENT,
+                      NULL, /* declarations */
+                      default_source);
+  g_free (default_source);
+
+  g_queue_push_head (&cache->entries, entry);
+
+  return entry;
+}
+
+static SnippetCacheEntry *
+get_global_cache_entry (SnippetCache *cache, int param)
+{
+  GList *l;
+
+  for (l = cache->entries.head; l; l = l->next)
+    {
+      SnippetCacheEntry *entry = l->data;
+
+      if (entry->start_position == param)
+        return entry;
+    }
+
+  return NULL;
+}
+
+static SnippetCacheEntry *
+add_global_cache_entry (SnippetCache *cache,
+                        const char *decl,
+                        int param)
+{
+  SnippetCacheEntry *entry = g_slice_new (SnippetCacheEntry);
+
+  entry->start_position = param;
+
+  entry->vertex_snippet =
+    cogl_snippet_new (COGL_SNIPPET_HOOK_VERTEX_GLOBALS,
+                      decl,
+                      NULL /* post */);
+  entry->fragment_snippet =
+    cogl_snippet_new (COGL_SNIPPET_HOOK_FRAGMENT_GLOBALS,
+                      decl,
+                      NULL /* post */);
+
+  g_queue_push_head (&cache->entries, entry);
+
+  return entry;
+}
+
+static void
+setup_pipeline_from_cache_entry (CoglGstVideoSink *sink,
+                                 CoglPipeline *pipeline,
+                                 SnippetCacheEntry *cache_entry,
+                                 int n_layers)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+
+  if (cache_entry)
+    {
+      int i;
+
+      /* The global sampling function gets added to both the fragment
+       * and vertex stages. The hope is that the GLSL compiler will
+       * easily remove the dead code if it's not actually used */
+      cogl_pipeline_add_snippet (pipeline, cache_entry->vertex_snippet);
+      cogl_pipeline_add_snippet (pipeline, cache_entry->fragment_snippet);
+
+      /* Set all of the layers to just directly copy from the previous
+       * layer so that it won't redundantly generate code to sample
+       * the intermediate textures */
+      for (i = 0; i < n_layers; i++) {
+        cogl_pipeline_set_layer_combine (pipeline,
+                                         priv->custom_start + i,
+                                         "RGBA=REPLACE(PREVIOUS)",
+                                         NULL);
+      }
+
+      if (priv->default_sample) {
+        cogl_pipeline_add_layer_snippet (pipeline,
+                                         priv->custom_start + n_layers - 1,
+                                         cache_entry->default_sample_snippet);
+      }
+    }
+
+  priv->frame_dirty = TRUE;
+}
+
 /**/
 
 static void
@@ -232,6 +365,112 @@ cogl_gst_video_sink_attach_frame (CoglGstVideoSink *sink,
       cogl_pipeline_set_layer_texture (pln, i + priv->custom_start,
                                        priv->frame[i]);
 }
+
+/* YUV <-> RGB conversions */
+
+static const gchar *color_conversions_shaders =
+  "\n"
+  "/* These conversion functions take : */\n"
+  "/*   Y = [0, 1] */\n"
+  "/*   U = [-0.5, 0.5] */\n"
+  "/*   V = [-0.5, 0.5] */\n"
+  "vec3\n"
+  "cogl_gst_yuv_bt601_to_srgb (vec3 yuv)\n"
+  "{\n"
+  "  return mat3 (1.0,    1.0,      1.0,\n"
+  "               0.0,   -0.344136, 1.772,\n"
+  "               1.402, -0.714136, 0.0   ) * yuv;\n"
+  "}\n"
+  "\n"
+  "vec3\n"
+  "cogl_gst_yuv_bt709_to_srgb (vec3 yuv)\n"
+  "{\n"
+  "  return mat3 (1.0,     1.0,      1.0,\n"
+  "               0.0,    -0.187324, 1.8556,\n"
+  "               1.5748, -0.468124, 0.0    ) * yuv;\n"
+  "}\n"
+  "\n"
+  "vec3\n"
+  "cogl_gst_yuv_bt2020_to_srgb (vec3 yuv)\n"
+  "{\n"
+  "  return mat3 (1.0,     1.0,      1.0,\n"
+  "               0.0,     0.571353, 1.8814,\n"
+  "               1.4746,  0.164553, 0.0    ) * yuv;\n"
+  "}\n"
+  "/* Original transformation, still no idea where these values come from... */\n"
+  "vec3\n"
+  "cogl_gst_yuv_originalyuv_to_srgb (vec3 yuv)\n"
+  "{\n"
+  "  return mat3 (1.0,         1.0,      1.0,\n"
+  "               0.0,        -0.390625, 2.015625,\n"
+  "               1.59765625, -0.8125,   0.0      ) * yuv;\n"
+  "}\n"
+  "\n"
+  "vec3\n"
+  "cogl_gst_yuv_srgb_to_bt601 (vec3 rgb)\n"
+  "{\n"
+  "  return mat3 (0.299,  0.5,      -0.168736,\n"
+  "               0.587, -0.418688, -0.331264,\n"
+  "               0.114, -0.081312,  0.5      ) * rgb;\n"
+  "}\n"
+  "\n"
+  "vec3\n"
+  "cogl_gst_yuv_srgb_to_bt709 (vec3 rgb)\n"
+  "{\n"
+  "  return mat3 (0.2126, -0.114626,  0.5,\n"
+  "               0.7152, -0.385428, -0.454153,\n"
+  "               0.0722,  0.5,       0.045847 ) * rgb;\n"
+  "}\n"
+  "\n"
+  "vec3\n"
+  "cogl_gst_yuv_srgb_to_bt2020 (vec3 rgb)\n"
+  "{\n"
+  "  return mat3 (0.2627, -0.139630,  0.503380,\n"
+  "               0.6780, -0.360370, -0.462893,\n"
+  "               0.0593,  0.5,      -0.040486 ) * rgb;\n"
+  "}\n"
+  "\n"
+  "#define cogl_gst_default_yuv_to_srgb(arg) cogl_gst_yuv_%s_to_srgb(arg)\n"
+  "\n";
+
+static const char *
+_gst_video_color_matrix_to_string (GstVideoColorMatrix matrix)
+{
+  switch (matrix)
+    {
+    case GST_VIDEO_COLOR_MATRIX_BT601:
+      return "bt601";
+    case GST_VIDEO_COLOR_MATRIX_BT709:
+      return "bt709";
+
+    default:
+      return "bt709";
+    }
+}
+
+static void
+cogl_gst_video_sink_setup_conversions (CoglGstVideoSink *sink,
+                                       CoglPipeline *pipeline)
+{
+  CoglGstVideoSinkPrivate *priv = sink->priv;
+  GstVideoColorMatrix matrix = priv->info.colorimetry.matrix;
+  static SnippetCache snippet_cache;
+  SnippetCacheEntry *entry = get_global_cache_entry (&snippet_cache, matrix);
+
+  if (entry == NULL)
+    {
+      char *source = g_strdup_printf (color_conversions_shaders,
+                                      _gst_video_color_matrix_to_string (matrix));
+
+      entry = add_global_cache_entry (&snippet_cache, source, matrix);
+      g_free (source);
+    }
+
+  cogl_pipeline_add_snippet (pipeline, entry->vertex_snippet);
+  cogl_pipeline_add_snippet (pipeline, entry->fragment_snippet);
+}
+
+/**/
 
 static CoglBool
 cogl_gst_source_prepare (GSource *source,
@@ -309,97 +548,10 @@ cogl_gst_video_sink_setup_pipeline (CoglGstVideoSink *sink,
   g_return_if_fail (COGL_GST_IS_VIDEO_SINK (sink));
 
   if (sink->priv->renderer)
-    sink->priv->renderer->setup_pipeline (sink, pipeline);
-}
-
-static SnippetCacheEntry *
-get_cache_entry (CoglGstVideoSink *sink,
-                 SnippetCache *cache)
-{
-  CoglGstVideoSinkPrivate *priv = sink->priv;
-  GList *l;
-
-  for (l = cache->entries.head; l; l = l->next)
     {
-      SnippetCacheEntry *entry = l->data;
-
-      if (entry->start_position == priv->custom_start)
-        return entry;
+      cogl_gst_video_sink_setup_conversions (sink, pipeline);
+      sink->priv->renderer->setup_pipeline (sink, pipeline);
     }
-
-  return NULL;
-}
-
-static SnippetCacheEntry *
-add_cache_entry (CoglGstVideoSink *sink,
-                 SnippetCache *cache,
-                 const char *decl)
-{
-  CoglGstVideoSinkPrivate *priv = sink->priv;
-  SnippetCacheEntry *entry = g_slice_new (SnippetCacheEntry);
-  char *default_source;
-
-  entry->start_position = priv->custom_start;
-
-  entry->vertex_snippet =
-    cogl_snippet_new (COGL_SNIPPET_HOOK_VERTEX_GLOBALS,
-                      decl,
-                      NULL /* post */);
-  entry->fragment_snippet =
-    cogl_snippet_new (COGL_SNIPPET_HOOK_FRAGMENT_GLOBALS,
-                      decl,
-                      NULL /* post */);
-
-  default_source =
-    g_strdup_printf ("  cogl_layer *= cogl_gst_sample_video%i "
-                     "(cogl_tex_coord%i_in.st);\n",
-                     priv->custom_start,
-                     priv->custom_start);
-  entry->default_sample_snippet =
-    cogl_snippet_new (COGL_SNIPPET_HOOK_LAYER_FRAGMENT,
-                      NULL, /* declarations */
-                      default_source);
-  g_free (default_source);
-
-  g_queue_push_head (&cache->entries, entry);
-
-  return entry;
-}
-
-static void
-setup_pipeline_from_cache_entry (CoglGstVideoSink *sink,
-                                 CoglPipeline *pipeline,
-                                 SnippetCacheEntry *cache_entry,
-                                 int n_layers)
-{
-  CoglGstVideoSinkPrivate *priv = sink->priv;
-
-  if (cache_entry)
-    {
-      int i;
-
-      /* The global sampling function gets added to both the fragment
-       * and vertex stages. The hope is that the GLSL compiler will
-       * easily remove the dead code if it's not actually used */
-      cogl_pipeline_add_snippet (pipeline, cache_entry->vertex_snippet);
-      cogl_pipeline_add_snippet (pipeline, cache_entry->fragment_snippet);
-
-      /* Set all of the layers to just directly copy from the previous
-       * layer so that it won't redundantly generate code to sample
-       * the intermediate textures */
-      for (i = 0; i < n_layers; i++)
-        cogl_pipeline_set_layer_combine (pipeline,
-                                         priv->custom_start + i,
-                                         "RGBA=REPLACE(PREVIOUS)",
-                                         NULL);
-
-      if (priv->default_sample)
-        cogl_pipeline_add_layer_snippet (pipeline,
-                                         priv->custom_start + n_layers - 1,
-                                         cache_entry->default_sample_snippet);
-    }
-
-  priv->frame_dirty = TRUE;
 }
 
 CoglPipeline *
@@ -521,7 +673,7 @@ cogl_gst_rgb24_glsl_setup_pipeline (CoglGstVideoSink *sink,
 {
   CoglGstVideoSinkPrivate *priv = sink->priv;
   static SnippetCache snippet_cache;
-  SnippetCacheEntry *entry = get_cache_entry (sink, &snippet_cache);
+  SnippetCacheEntry *entry = get_layer_cache_entry (sink, &snippet_cache);
 
   if (entry == NULL)
     {
@@ -536,7 +688,7 @@ cogl_gst_rgb24_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          priv->custom_start,
                          priv->custom_start);
 
-      entry = add_cache_entry (sink, &snippet_cache, source);
+      entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
     }
 
@@ -614,7 +766,7 @@ cogl_gst_rgb32_glsl_setup_pipeline (CoglGstVideoSink *sink,
 {
   CoglGstVideoSinkPrivate *priv = sink->priv;
   static SnippetCache snippet_cache;
-  SnippetCacheEntry *entry = get_cache_entry (sink, &snippet_cache);
+  SnippetCacheEntry *entry = get_layer_cache_entry (sink, &snippet_cache);
 
   if (entry == NULL)
     {
@@ -632,7 +784,7 @@ cogl_gst_rgb32_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          priv->custom_start,
                          priv->custom_start);
 
-      entry = add_cache_entry (sink, &snippet_cache, source);
+      entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
     }
 
@@ -821,7 +973,7 @@ cogl_gst_yv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
   static SnippetCache snippet_cache;
   SnippetCacheEntry *entry;
 
-  entry = get_cache_entry (sink, &snippet_cache);
+  entry = get_layer_cache_entry (sink, &snippet_cache);
 
   if (entry == NULL)
     {
@@ -836,9 +988,7 @@ cogl_gst_yv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          "  float u = texture2D (cogl_sampler%i, UV).a - 0.5;\n"
                          "  float v = texture2D (cogl_sampler%i, UV).a - 0.5;\n"
                          "  vec4 color;\n"
-                         "  color.r = y + 1.59765625 * v;\n"
-                         "  color.g = y - 0.390625 * u - 0.8125 * v;\n"
-                         "  color.b = y + 2.015625 * u;\n"
+                         "  color.rgb = cogl_gst_default_yuv_to_srgb (vec3(y, u, v));\n"
                          "  color.a = 1.0;\n"
                          "  return color;\n"
                          "}\n",
@@ -847,7 +997,7 @@ cogl_gst_yv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          priv->custom_start + 1,
                          priv->custom_start + 2);
 
-      entry = add_cache_entry (sink, &snippet_cache, source);
+      entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
     }
 
@@ -884,7 +1034,7 @@ cogl_gst_ayuv_glsl_setup_pipeline (CoglGstVideoSink *sink,
   static SnippetCache snippet_cache;
   SnippetCacheEntry *entry;
 
-  entry = get_cache_entry (sink, &snippet_cache);
+  entry = get_layer_cache_entry (sink, &snippet_cache);
 
   if (entry == NULL)
     {
@@ -899,16 +1049,14 @@ cogl_gst_ayuv_glsl_setup_pipeline (CoglGstVideoSink *sink,
                            "  float u = color.b - 0.5;\n"
                            "  float v = color.a - 0.5;\n"
                            "  color.a = color.r;\n"
-                           "  color.r = y + 1.59765625 * v;\n"
-                           "  color.g = y - 0.390625 * u - 0.8125 * v;\n"
-                           "  color.b = y + 2.015625 * u;\n"
+                           "  color.rgb = cogl_gst_default_yuv_to_srgb (vec3(y, u, v));\n"
                            /* Premultiply the color */
                            "  color.rgb *= color.a;\n"
                            "  return color;\n"
                            "}\n", priv->custom_start,
                            priv->custom_start);
 
-      entry = add_cache_entry (sink, &snippet_cache, source);
+      entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
     }
 
@@ -965,7 +1113,7 @@ cogl_gst_nv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
   static SnippetCache snippet_cache;
   SnippetCacheEntry *entry;
 
-  entry = get_cache_entry (sink, &snippet_cache);
+  entry = get_layer_cache_entry (sink, &snippet_cache);
 
   if (entry == NULL)
     {
@@ -983,9 +1131,7 @@ cogl_gst_nv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          "  uv -= 0.5;\n"
                          "  float u = uv.x;\n"
                          "  float v = uv.y;\n"
-                         "  color.r = y + 1.59765625 * v;\n"
-                         "  color.g = y - 0.390625 * u - 0.8125 * v;\n"
-                         "  color.b = y + 2.015625 * u;\n"
+                         "  color.rgb = cogl_gst_default_yuv_to_srgb (vec3(y, u, v));\n"
                          "  color.a = 1.0;\n"
                          "  return color;\n"
                          "}\n",
@@ -993,7 +1139,7 @@ cogl_gst_nv12_glsl_setup_pipeline (CoglGstVideoSink *sink,
                          priv->custom_start,
                          priv->custom_start + 1);
 
-      entry = add_cache_entry (sink, &snippet_cache, source);
+      entry = add_layer_cache_entry (sink, &snippet_cache, source);
       g_free (source);
     }
 
