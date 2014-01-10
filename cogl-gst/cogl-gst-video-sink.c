@@ -57,8 +57,6 @@
                        "BGR," \
                        "NV12 }"
 
-#define SINK_CAPS GST_VIDEO_CAPS_MAKE (BASE_SINK_CAPS)
-
 #define COGL_GST_PARAM_STATIC        \
   (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
 
@@ -71,11 +69,14 @@
 #define COGL_GST_PARAM_READWRITE     \
   (G_PARAM_READABLE | G_PARAM_WRITABLE | COGL_GST_PARAM_STATIC)
 
+static const char cogl_gst_video_sink_caps_str[] =
+  GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY, BASE_SINK_CAPS);
+
 static GstStaticPadTemplate sinktemplate_all =
   GST_STATIC_PAD_TEMPLATE ("sink",
                            GST_PAD_SINK,
                            GST_PAD_ALWAYS,
-                           GST_STATIC_CAPS (SINK_CAPS));
+                           GST_STATIC_CAPS (cogl_gst_video_sink_caps_str));
 
 static void color_balance_iface_init (GstColorBalanceInterface *iface);
 
@@ -1108,7 +1109,9 @@ static CoglGstRenderer rgb24_glsl_renderer =
   "RGB 24",
   COGL_GST_RGB24,
   COGL_GST_RENDERER_NEEDS_GLSL,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("{ RGB, BGR }")),
+
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                      "{ RGB, BGR }")),
   1, /* n_layers */
   cogl_gst_rgb24_glsl_setup_pipeline,
   cogl_gst_rgb24_upload,
@@ -1119,7 +1122,8 @@ static CoglGstRenderer rgb24_renderer =
   "RGB 24",
   COGL_GST_RGB24,
   0,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("{ RGB, BGR }")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                      "{ RGB, BGR }")),
   1, /* n_layers */
   cogl_gst_rgb24_setup_pipeline,
   cogl_gst_rgb24_upload,
@@ -1218,7 +1222,8 @@ static CoglGstRenderer rgb32_glsl_renderer =
   "RGB 32",
   COGL_GST_RGB32,
   COGL_GST_RENDERER_NEEDS_GLSL,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("{ RGBA, BGRA }")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                     "{ RGBA, BGRA }")),
   1, /* n_layers */
   cogl_gst_rgb32_glsl_setup_pipeline,
   cogl_gst_rgb32_upload,
@@ -1229,7 +1234,8 @@ static CoglGstRenderer rgb32_renderer =
   "RGB 32",
   COGL_GST_RGB32,
   0,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("{ RGBA, BGRA }")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                     "{ RGBA, BGRA }")),
   2, /* n_layers */
   cogl_gst_rgb32_setup_pipeline,
   cogl_gst_rgb32_upload,
@@ -1375,7 +1381,8 @@ static CoglGstRenderer yv12_glsl_renderer =
   "YV12 glsl",
   COGL_GST_YV12,
   COGL_GST_RENDERER_NEEDS_GLSL,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("YV12")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                     "YV12")),
   3, /* n_layers */
   cogl_gst_yv12_glsl_setup_pipeline,
   cogl_gst_yv12_upload,
@@ -1386,7 +1393,8 @@ static CoglGstRenderer i420_glsl_renderer =
   "I420 glsl",
   COGL_GST_I420,
   COGL_GST_RENDERER_NEEDS_GLSL,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("I420")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                     "I420")),
   3, /* n_layers */
   cogl_gst_yv12_glsl_setup_pipeline,
   cogl_gst_i420_upload,
@@ -1467,7 +1475,8 @@ static CoglGstRenderer ayuv_glsl_renderer =
   "AYUV glsl",
   COGL_GST_AYUV,
   COGL_GST_RENDERER_NEEDS_GLSL,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE ("AYUV")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                     "AYUV")),
   1, /* n_layers */
   cogl_gst_ayuv_glsl_setup_pipeline,
   cogl_gst_ayuv_upload,
@@ -1559,8 +1568,8 @@ static CoglGstRenderer nv12_glsl_renderer =
   "NV12 glsl",
   COGL_GST_NV12,
   COGL_GST_RENDERER_NEEDS_GLSL | COGL_GST_RENDERER_NEEDS_TEXTURE_RG,
-  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES ("memory:SystemMemory",
-                                                      "NV12")),
+  GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE_WITH_FEATURES(GST_CAPS_FEATURE_MEMORY_SYSTEM_MEMORY,
+                                                     "NV12")),
   2, /* n_layers */
   cogl_gst_nv12_glsl_setup_pipeline,
   cogl_gst_nv12_upload,
