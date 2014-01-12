@@ -33,7 +33,7 @@
 #include "cogl-color-private.h"
 #include "cogl-gtype-private.h"
 
-COGL_GTYPE_DEFINE_BOXED ("Color", color, cogl_color_copy, cogl_color_free);
+COGL_GTYPE_DEFINE_BOXED (Color, color, cogl_color_copy, cogl_color_free);
 
 CoglColor *
 cogl_color_new (void)

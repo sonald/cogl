@@ -43,7 +43,9 @@ static void _cogl_matrix_stack_free (CoglMatrixStack *stack);
 
 COGL_OBJECT_DEFINE (MatrixStack, matrix_stack);
 COGL_GTYPE_DEFINE_CLASS (MatrixStack, matrix_stack);
-COGL_GTYPE_DEFINE_BOXED ("MatrixEntry", matrix_entry, cogl_matrix_entry_ref, cogl_matrix_entry_unref);
+COGL_GTYPE_DEFINE_BOXED (MatrixEntry, matrix_entry,
+                         cogl_matrix_entry_ref,
+                         cogl_matrix_entry_unref);
 
 static CoglMagazine *cogl_matrix_stack_magazine;
 static CoglMagazine *cogl_matrix_stack_matrices_magazine;

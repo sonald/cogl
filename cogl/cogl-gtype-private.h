@@ -62,7 +62,7 @@ cogl_##underscore_name##_get_gtype (void) \
    if (g_once_init_enter (&type_volatile)) \
      { \
        GType type = \
-         g_boxed_type_register_static (g_intern_static_string ("Cogl" Name), \
+         g_boxed_type_register_static (g_intern_static_string (I_("Cogl" # Name)), \
                                        (GBoxedCopyFunc)copy_func, \
                                        (GBoxedFreeFunc)free_func); \
        g_once_init_leave (&type_volatile, type); \

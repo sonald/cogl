@@ -51,7 +51,7 @@
 
 #define FLOAT_EPSILON 1e-03
 
-COGL_GTYPE_DEFINE_BOXED ("Quaternion", quaternion,
+COGL_GTYPE_DEFINE_BOXED (Quaternion, quaternion,
                          cogl_quaternion_copy,
                          cogl_quaternion_free);
 

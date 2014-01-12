@@ -36,7 +36,7 @@
 #include <math.h>
 #include <string.h>
 
-COGL_GTYPE_DEFINE_BOXED ("Euler", euler,
+COGL_GTYPE_DEFINE_BOXED (Euler, euler,
                          cogl_euler_copy,
                          cogl_euler_free);
 
