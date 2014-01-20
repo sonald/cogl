@@ -1,3 +1,30 @@
+Cogl 1.16.2                                                        2014-01-20
+
+  • List of changes since Cogl 1.16.0
+
+  » YV12/I420 support in cogl-gst is fixed.
+  » cogl_framebuffer_push_path_clip is fixed.
+  » MSVC build updates
+
+  • Gnome Bugzilla bugs closed since 1.16.0:
+
+    #706808 - "Unable to locate required kms libraries" message is really
+              uninformative
+    #710135 - Fix build on big endian
+    #710926 - Build fails without declaration of wl_resource
+    #719582 - cogl-framebuffer: Don't mark the clear clip dirty from the
+              journal
+    #721450 - Re-enable swap_region for mesa 10.1+ llvmpipe / swrast
+
+Many thanks to:
+
+  Robert Bragg
+  Adel Gadllah
+  Lionel Landwerlin
+  Chun-wei Fan
+  Emilio Pozuelo Monfort
+  Jasper St. Pierre
+
 Cogl 1.16.0                                                        2013-09-23
 
   • List of changes since Cogl 1.15.10
