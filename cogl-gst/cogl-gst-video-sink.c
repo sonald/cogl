@@ -80,11 +80,13 @@ static GstStaticPadTemplate sinktemplate_all =
                            GST_STATIC_CAPS (cogl_gst_video_sink_caps_str));
 
 static void color_balance_iface_init (GstColorBalanceInterface *iface);
+static void navigation_iface_init (GstNavigationInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (CoglGstVideoSink,
                          cogl_gst_video_sink,
                          GST_TYPE_BASE_SINK,
-                         G_IMPLEMENT_INTERFACE (GST_TYPE_COLOR_BALANCE, color_balance_iface_init))
+                         G_IMPLEMENT_INTERFACE (GST_TYPE_COLOR_BALANCE, color_balance_iface_init)
+                         G_IMPLEMENT_INTERFACE (GST_TYPE_NAVIGATION, navigation_iface_init))
 
 enum
 {
@@ -223,6 +225,30 @@ COGL_GTYPE_DEFINE_BOXED (GstRectangle,
                          gst_rectangle,
                          cogl_gst_rectangle_copy,
                          cogl_gst_rectangle_free);
+
+static gpointer
+cogl_gst_point_copy (gpointer src)
+{
+  if (G_LIKELY (src))
+    {
+      CoglGstPoint *new = g_slice_new (CoglGstPoint);
+      memcpy (new, src, sizeof (CoglGstPoint));
+      return new;
+    }
+  else
+    return NULL;
+}
+
+static void
+cogl_gst_point_free (gpointer ptr)
+{
+  g_slice_free (CoglGstPoint, ptr);
+}
+
+COGL_GTYPE_DEFINE_BOXED (GstPoint,
+                         gst_point,
+                         cogl_gst_point_copy,
+                         cogl_gst_point_free);
 
 /* Snippet cache */
 
@@ -550,6 +576,56 @@ color_balance_iface_init (GstColorBalanceInterface *iface)
   iface->get_value = cogl_gst_video_sink_color_balance_get_value;
 
   iface->get_balance_type = cogl_gst_video_sink_color_balance_get_balance_type;
+}
+
+/* Navigation */
+
+static void
+cogl_gst_video_sink_navigation_send_event (GstNavigation *navigation,
+                                           GstStructure *structure)
+{
+  CoglGstVideoSink *self = COGL_GST_VIDEO_SINK (navigation);
+  CoglGstVideoSinkPrivate *priv = self->priv;
+  GstEvent *event;
+  GstPad *pad = NULL;
+  gdouble x, y;
+  gfloat x_out, y_out;
+
+  /* Converting pointer coordinates to the non scaled geometry
+   * if the structure contains pointer coordinates */
+  /* if (gst_structure_get_double (structure, "pointer_x", &x) && */
+  /*     gst_structure_get_double (structure, "pointer_y", &y)) { */
+  /*   if (clutter_actor_transform_stage_point (CLUTTER_ACTOR (priv->texture), x, */
+  /*           y, &x_out, &y_out) == FALSE) { */
+  /*     g_warning ("Failed to convert non-scaled coordinates for video-sink"); */
+  /*     return; */
+  /*   } */
+
+  /*   x = x_out * priv->info.width / */
+  /*       clutter_actor_get_width (CLUTTER_ACTOR (priv->texture)); */
+  /*   y = y_out * priv->info.height / */
+  /*       clutter_actor_get_height (CLUTTER_ACTOR (priv->texture)); */
+
+  /*   gst_structure_set (structure, */
+  /*       "pointer_x", G_TYPE_DOUBLE, (gdouble) x, */
+  /*       "pointer_y", G_TYPE_DOUBLE, (gdouble) y, NULL); */
+  /* } */
+
+  event = gst_event_new_navigation (structure);
+
+  pad = gst_pad_get_peer (GST_VIDEO_SINK_PAD (self));
+  if (GST_IS_PAD (pad) && GST_IS_EVENT (event))
+    {
+      gst_pad_send_event (pad, event);
+
+      gst_object_unref (pad);
+    }
+}
+
+static void
+navigation_iface_init (GstNavigationInterface *iface)
+{
+  iface->send_event = cogl_gst_video_sink_navigation_send_event;
 }
 
 /**/

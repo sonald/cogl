@@ -507,6 +507,21 @@ typedef struct _CoglGstRectangle
 COGL_GST_GTYPE_DECLARE_TYPE (rectangle);
 
 /**
+ * CoglGstPoint:
+ * @x: The X coordinate
+ * @y: The Y coordinate
+ *
+ * Describes a point that can be used for event positions.
+ */
+typedef struct _CoglGstPoint
+{
+  float x;
+  float y;
+} CoglGstPoint;
+
+COGL_GST_GTYPE_DECLARE_TYPE (point);
+
+/**
  * cogl_gst_video_sink_fit_size:
  * @sink: A #CoglGstVideoSink
  * @available: (in): The space available for video output
