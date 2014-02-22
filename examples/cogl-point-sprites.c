@@ -226,9 +226,9 @@ create_primitive (Data *data)
     cogl_primitive_new_with_attributes (COGL_VERTICES_MODE_POINTS,
                                         N_SPARKS,
                                         attributes,
-                                        G_N_ELEMENTS (attributes));
+                                        U_N_ELEMENTS (attributes));
 
-  for (i = 0; i < G_N_ELEMENTS (attributes); i++)
+  for (i = 0; i < U_N_ELEMENTS (attributes); i++)
     cogl_object_unref (attributes[i]);
 }
 

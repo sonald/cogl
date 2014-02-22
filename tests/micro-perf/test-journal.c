@@ -115,7 +115,7 @@ paint_cb (void *user_data)
   elapsed = g_timer_elapsed (data->timer, NULL);
   if (elapsed > 1.0)
     {
-      g_print ("fps = %f\n", data->frame / elapsed);
+      u_print ("fps = %f\n", data->frame / elapsed);
       g_timer_start (data->timer);
       data->frame = 0;
     }

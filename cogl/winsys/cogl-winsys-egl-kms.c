@@ -45,7 +45,7 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 #include <gbm.h>
-#include <glib.h>
+#include <ulib.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -85,8 +85,8 @@ typedef struct _CoglOutputKMS
 
 typedef struct _CoglDisplayKMS
 {
-  GList *outputs;
-  GList *crtcs;
+  UList *outputs;
+  UList *crtcs;
 
   int width, height;
   CoglBool pending_set_crtc;
@@ -121,8 +121,8 @@ _cogl_winsys_renderer_disconnect (CoglRenderer *renderer)
 
   eglTerminate (egl_renderer->edpy);
 
-  g_slice_free (CoglRendererKMS, kms_renderer);
-  g_slice_free (CoglRendererEGL, egl_renderer);
+  u_slice_free (CoglRendererKMS, kms_renderer);
+  u_slice_free (CoglRendererEGL, egl_renderer);
 }
 
 static void
@@ -139,7 +139,7 @@ flush_pending_swap_notify_cb (void *data,
 
       if (kms_onscreen->pending_swap_notify)
         {
-          CoglFrameInfo *info = g_queue_pop_head (&onscreen->pending_frame_infos);
+          CoglFrameInfo *info = u_queue_pop_head (&onscreen->pending_frame_infos);
 
           _cogl_onscreen_notify_frame_sync (onscreen, info);
           _cogl_onscreen_notify_complete (onscreen, info);
@@ -162,7 +162,7 @@ flush_pending_swap_notify_idle (void *user_data)
   _cogl_closure_disconnect (kms_renderer->swap_notify_idle);
   kms_renderer->swap_notify_idle = NULL;
 
-  g_list_foreach (context->framebuffers,
+  u_list_foreach (context->framebuffers,
                   flush_pending_swap_notify_cb,
                   NULL);
 }
@@ -237,7 +237,7 @@ page_flip_handler (int fd,
 
       cogl_object_unref (flip->onscreen);
 
-      g_slice_free (CoglFlipKMS, flip);
+      u_slice_free (CoglFlipKMS, flip);
     }
 }
 
@@ -272,11 +272,11 @@ _cogl_winsys_renderer_connect (CoglRenderer *renderer,
   CoglRendererEGL *egl_renderer;
   CoglRendererKMS *kms_renderer;
 
-  renderer->winsys = g_slice_new0 (CoglRendererEGL);
+  renderer->winsys = u_slice_new0 (CoglRendererEGL);
   egl_renderer = renderer->winsys;
 
   egl_renderer->platform_vtable = &_cogl_winsys_egl_vtable;
-  egl_renderer->platform = g_slice_new0 (CoglRendererKMS);
+  egl_renderer->platform = u_slice_new0 (CoglRendererKMS);
   kms_renderer = egl_renderer->platform;
 
   kms_renderer->fd = open (device_name, O_RDWR);
@@ -422,7 +422,7 @@ find_output (int _index,
              int n_excluded_connectors,
              CoglError **error)
 {
-  char *connector_env_name = g_strdup_printf ("COGL_KMS_CONNECTOR%d", _index);
+  char *connector_env_name = u_strdup_printf ("COGL_KMS_CONNECTOR%d", _index);
   char *mode_env_name;
   drmModeConnector *connector;
   drmModeEncoder *encoder;
@@ -437,7 +437,7 @@ find_output (int _index,
     }
   else
     connector = NULL;
-  g_free (connector_env_name);
+  u_free (connector_env_name);
 
   if (connector == NULL)
     connector = find_connector (fd, resources,
@@ -455,7 +455,7 @@ find_output (int _index,
    * seems more reliable. */
   encoder = drmModeGetEncoder (fd, connector->encoders[0]);
 
-  output = g_slice_new0 (CoglOutputKMS);
+  output = u_slice_new0 (CoglOutputKMS);
   output->connector = connector;
   output->encoder = encoder;
   output->saved_crtc = drmModeGetCrtc (fd, encoder->crtc_id);
@@ -463,7 +463,7 @@ find_output (int _index,
   if (is_panel (connector->connector_type))
     {
       n_modes = connector->count_modes + 1;
-      modes = g_new (drmModeModeInfo, n_modes);
+      modes = u_new (drmModeModeInfo, n_modes);
       memcpy (modes, connector->modes,
               sizeof (drmModeModeInfo) * connector->count_modes);
       /* TODO: parse EDID */
@@ -472,12 +472,12 @@ find_output (int _index,
   else
     {
       n_modes = connector->count_modes;
-      modes = g_new (drmModeModeInfo, n_modes);
+      modes = u_new (drmModeModeInfo, n_modes);
       memcpy (modes, connector->modes,
               sizeof (drmModeModeInfo) * n_modes);
     }
 
-  mode_env_name = g_strdup_printf ("COGL_KMS_CONNECTOR%d_MODE", _index);
+  mode_env_name = u_strdup_printf ("COGL_KMS_CONNECTOR%d_MODE", _index);
   if (getenv (mode_env_name))
     {
       const char *name = getenv (mode_env_name);
@@ -495,7 +495,7 @@ find_output (int _index,
         }
       if (!found)
         {
-          g_free (mode_env_name);
+          u_free (mode_env_name);
           _cogl_set_error (error, COGL_WINSYS_ERROR,
                        COGL_WINSYS_ERROR_INIT,
                        "COGL_KMS_CONNECTOR%d_MODE of %s could not be found",
@@ -504,11 +504,11 @@ find_output (int _index,
         }
       n_modes = 1;
       mode = modes[i];
-      g_free (modes);
-      modes = g_new (drmModeModeInfo, 1);
+      u_free (modes);
+      modes = u_new (drmModeModeInfo, 1);
       modes[0] = mode;
     }
-  g_free (mode_env_name);
+  u_free (mode_env_name);
 
   output->modes = modes;
   output->n_modes = n_modes;
@@ -523,7 +523,7 @@ setup_crtc_modes (CoglDisplay *display, int fb_id)
   CoglDisplayKMS *kms_display = egl_display->platform;
   CoglRendererEGL *egl_renderer = display->renderer->winsys;
   CoglRendererKMS *kms_renderer = egl_renderer->platform;
-  GList *l;
+  UList *l;
 
   for (l = kms_display->crtcs; l; l = l->next)
     {
@@ -535,7 +535,7 @@ setup_crtc_modes (CoglDisplay *display, int fb_id)
                                 crtc->connectors, crtc->count,
                                 crtc->count ? &crtc->mode : NULL);
       if (ret)
-        g_warning ("Failed to set crtc mode %s: %m", crtc->mode.name);
+        u_warning ("Failed to set crtc mode %s: %m", crtc->mode.name);
     }
 }
 
@@ -546,7 +546,7 @@ flip_all_crtcs (CoglDisplay *display, CoglFlipKMS *flip, int fb_id)
   CoglDisplayKMS *kms_display = egl_display->platform;
   CoglRendererEGL *egl_renderer = display->renderer->winsys;
   CoglRendererKMS *kms_renderer = egl_renderer->platform;
-  GList *l;
+  UList *l;
 
   for (l = kms_display->crtcs; l; l = l->next)
     {
@@ -562,7 +562,7 @@ flip_all_crtcs (CoglDisplay *display, CoglFlipKMS *flip, int fb_id)
 
       if (ret)
         {
-          g_warning ("Failed to flip: %m");
+          u_warning ("Failed to flip: %m");
           continue;
         }
 
@@ -573,8 +573,8 @@ flip_all_crtcs (CoglDisplay *display, CoglFlipKMS *flip, int fb_id)
 static void
 crtc_free (CoglKmsCrtc *crtc)
 {
-  g_free (crtc->connectors);
-  g_slice_free (CoglKmsCrtc, crtc);
+  u_free (crtc->connectors);
+  u_slice_free (CoglKmsCrtc, crtc);
 }
 
 static CoglKmsCrtc *
@@ -582,10 +582,10 @@ crtc_copy (CoglKmsCrtc *from)
 {
   CoglKmsCrtc *new;
 
-  new = g_slice_new (CoglKmsCrtc);
+  new = u_slice_new (CoglKmsCrtc);
 
   *new = *from;
-  new->connectors = g_memdup (from->connectors, from->count * sizeof(uint32_t));
+  new->connectors = u_memdup (from->connectors, from->count * sizeof(uint32_t));
 
   return new;
 }
@@ -603,7 +603,7 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
   CoglBool mirror;
   CoglKmsCrtc *crtc0, *crtc1;
 
-  kms_display = g_slice_new0 (CoglDisplayKMS);
+  kms_display = u_slice_new0 (CoglDisplayKMS);
   egl_display->platform = kms_display;
 
   resources = drmModeGetResources (kms_renderer->fd);
@@ -621,7 +621,7 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
                          NULL,
                          0, /* n excluded connectors */
                          error);
-  kms_display->outputs = g_list_append (kms_display->outputs, output0);
+  kms_display->outputs = u_list_append (kms_display->outputs, output0);
   if (!output0)
     return FALSE;
 
@@ -642,7 +642,7 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
       if (!output1)
         return FALSE;
 
-      kms_display->outputs = g_list_append (kms_display->outputs, output1);
+      kms_display->outputs = u_list_append (kms_display->outputs, output1);
 
       if (!find_mirror_modes (output0->modes, output0->n_modes,
                               output1->modes, output1->n_modes,
@@ -661,27 +661,27 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
       output1 = NULL;
     }
 
-  crtc0 = g_slice_new (CoglKmsCrtc);
+  crtc0 = u_slice_new (CoglKmsCrtc);
   crtc0->id = output0->encoder->crtc_id;
   crtc0->x = 0;
   crtc0->y = 0;
   crtc0->mode = output0->mode;
-  crtc0->connectors = g_new (uint32_t, 1);
+  crtc0->connectors = u_new (uint32_t, 1);
   crtc0->connectors[0] = output0->connector->connector_id;
   crtc0->count = 1;
-  kms_display->crtcs = g_list_prepend (kms_display->crtcs, crtc0);
+  kms_display->crtcs = u_list_prepend (kms_display->crtcs, crtc0);
 
   if (output1)
     {
-      crtc1 = g_slice_new (CoglKmsCrtc);
+      crtc1 = u_slice_new (CoglKmsCrtc);
       crtc1->id = output1->encoder->crtc_id;
       crtc1->x = 0;
       crtc1->y = 0;
       crtc1->mode = output1->mode;
-      crtc1->connectors = g_new (uint32_t, 1);
+      crtc1->connectors = u_new (uint32_t, 1);
       crtc1->connectors[0] = output1->connector->connector_id;
       crtc1->count = 1;
-      kms_display->crtcs = g_list_prepend (kms_display->crtcs, crtc1);
+      kms_display->crtcs = u_list_prepend (kms_display->crtcs, crtc1);
     }
 
   kms_display->width = output0->mode.hdisplay;
@@ -698,7 +698,7 @@ static void
 output_free (int fd, CoglOutputKMS *output)
 {
   if (output->modes)
-    g_free (output->modes);
+    u_free (output->modes);
 
   if (output->encoder)
     drmModeFreeEncoder (output->encoder);
@@ -715,12 +715,12 @@ output_free (int fd, CoglOutputKMS *output)
                                     &output->connector->connector_id, 1,
                                     &output->saved_crtc->mode);
           if (ret)
-            g_warning (G_STRLOC ": Error restoring saved CRTC");
+            u_warning (G_STRLOC ": Error restoring saved CRTC");
         }
       drmModeFreeConnector (output->connector);
     }
 
-  g_slice_free (CoglOutputKMS, output);
+  u_slice_free (CoglOutputKMS, output);
 }
 
 static void
@@ -731,16 +731,16 @@ _cogl_winsys_egl_display_destroy (CoglDisplay *display)
   CoglRenderer *renderer = display->renderer;
   CoglRendererEGL *egl_renderer = renderer->winsys;
   CoglRendererKMS *kms_renderer = egl_renderer->platform;
-  GList *l;
+  UList *l;
 
   for (l = kms_display->outputs; l; l = l->next)
     output_free (kms_renderer->fd, l->data);
-  g_list_free (kms_display->outputs);
+  u_list_free (kms_display->outputs);
   kms_display->outputs = NULL;
 
-  g_list_free_full (kms_display->crtcs, (GDestroyNotify) crtc_free);
+  u_list_free_full (kms_display->crtcs, (UDestroyNotify) crtc_free);
 
-  g_slice_free (CoglDisplayKMS, egl_display->platform);
+  u_slice_free (CoglDisplayKMS, egl_display->platform);
 }
 
 static CoglBool
@@ -857,7 +857,7 @@ _cogl_winsys_onscreen_swap_buffers_with_damage (CoglOnscreen *onscreen,
                     handle,
                     &kms_onscreen->next_fb_id))
     {
-      g_warning ("Failed to create new back buffer handle: %m");
+      u_warning ("Failed to create new back buffer handle: %m");
       gbm_surface_release_buffer (kms_onscreen->surface,
                                   kms_onscreen->next_bo);
       kms_onscreen->next_bo = NULL;
@@ -873,7 +873,7 @@ _cogl_winsys_onscreen_swap_buffers_with_damage (CoglOnscreen *onscreen,
       kms_display->pending_set_crtc = FALSE;
     }
 
-  flip = g_slice_new0 (CoglFlipKMS);
+  flip = u_slice_new0 (CoglFlipKMS);
   flip->onscreen = onscreen;
 
   flip_all_crtcs (context->display, flip, kms_onscreen->next_fb_id);
@@ -885,7 +885,7 @@ _cogl_winsys_onscreen_swap_buffers_with_damage (CoglOnscreen *onscreen,
                                   kms_onscreen->next_bo);
       kms_onscreen->next_bo = NULL;
       kms_onscreen->next_fb_id = 0;
-      g_slice_free (CoglFlipKMS, flip);
+      u_slice_free (CoglFlipKMS, flip);
       flip = NULL;
     }
   else
@@ -933,10 +933,10 @@ _cogl_winsys_onscreen_init (CoglOnscreen *onscreen,
 
   kms_display->onscreen = onscreen;
 
-  onscreen->winsys = g_slice_new0 (CoglOnscreenEGL);
+  onscreen->winsys = u_slice_new0 (CoglOnscreenEGL);
   egl_onscreen = onscreen->winsys;
 
-  kms_onscreen = g_slice_new0 (CoglOnscreenKMS);
+  kms_onscreen = u_slice_new0 (CoglOnscreenKMS);
   egl_onscreen->platform = kms_onscreen;
 
   kms_onscreen->surface =
@@ -998,7 +998,7 @@ _cogl_winsys_onscreen_deinit (CoglOnscreen *onscreen)
 
   /* flip state takes a reference on the onscreen so there should
    * never be outstanding flips when we reach here. */
-  g_return_if_fail (kms_onscreen->next_fb_id == 0);
+  u_return_if_fail (kms_onscreen->next_fb_id == 0);
 
   free_current_bo (onscreen);
 
@@ -1014,8 +1014,8 @@ _cogl_winsys_onscreen_deinit (CoglOnscreen *onscreen)
       kms_onscreen->surface = NULL;
     }
 
-  g_slice_free (CoglOnscreenKMS, kms_onscreen);
-  g_slice_free (CoglOnscreenEGL, onscreen->winsys);
+  u_slice_free (CoglOnscreenKMS, kms_onscreen);
+  u_slice_free (CoglOnscreenEGL, onscreen->winsys);
   onscreen->winsys = NULL;
 }
 
@@ -1102,7 +1102,7 @@ cogl_kms_display_set_layout (CoglDisplay *display,
   CoglRenderer *renderer = display->renderer;
   CoglRendererEGL *egl_renderer = renderer->winsys;
   CoglRendererKMS *kms_renderer = egl_renderer->platform;
-  GList *crtc_list;
+  UList *crtc_list;
   int i;
 
   if ((width != kms_display->width ||
@@ -1156,14 +1156,14 @@ cogl_kms_display_set_layout (CoglDisplay *display,
   kms_display->width = width;
   kms_display->height = height;
 
-  g_list_free_full (kms_display->crtcs, (GDestroyNotify) crtc_free);
+  u_list_free_full (kms_display->crtcs, (UDestroyNotify) crtc_free);
 
   crtc_list = NULL;
   for (i = 0; i < n_crtcs; i++)
     {
-      crtc_list = g_list_prepend (crtc_list, crtc_copy (crtcs[i]));
+      crtc_list = u_list_prepend (crtc_list, crtc_copy (crtcs[i]));
     }
-  crtc_list = g_list_reverse (crtc_list);
+  crtc_list = u_list_reverse (crtc_list);
   kms_display->crtcs = crtc_list;
 
   kms_display->pending_set_crtc = TRUE;
