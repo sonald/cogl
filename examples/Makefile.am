@@ -120,6 +120,7 @@ noinst_PROGRAMS = $(programs)
 endif
 
 EXTRA_DIST = \
+	cogl-gjs.js \
 	crate.jpg \
 	emscripten-example-js.h \
 	emscripten-example-js-library.js \
