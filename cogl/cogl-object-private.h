@@ -197,29 +197,12 @@ _cogl_##type_name##_object_new (Cogl##TypeName *new_obj)                \
   return new_obj;                                                       \
 }
 
-#define COGL_OBJECT_DEFINE_WITH_CODE_GTYPE(TypeName, type_name, code)   \
+#define COGL_OBJECT_DEFINE_WITH_CODE(TypeName, type_name, code)         \
                                                                         \
 COGL_OBJECT_COMMON_DEFINE_WITH_CODE(TypeName,                           \
                                     type_name,                          \
                                     do { code; } while (0);             \
                                     _COGL_GTYPE_INIT_CLASS (type_name)) \
-                                                                        \
-CoglBool                                                                \
-cogl_is_##type_name (void *object)                                      \
-{                                                                       \
-  CoglObject *obj = object;                                             \
-                                                                        \
-  if (object == NULL)                                                   \
-    return FALSE;                                                       \
-                                                                        \
-  return obj->klass == &_cogl_##type_name##_class;                      \
-}
-
-#define COGL_OBJECT_DEFINE_WITH_CODE(TypeName, type_name, code)         \
-                                                                        \
-COGL_OBJECT_COMMON_DEFINE_WITH_CODE(TypeName,                           \
-                                    type_name,                          \
-                                    do { code; } while (0);)            \
                                                                         \
 CoglBool                                                                \
 cogl_is_##type_name (void *object)                                      \
@@ -248,7 +231,7 @@ _cogl_is_##type_name (void *object)                                     \
 }
 
 #define COGL_OBJECT_DEFINE(TypeName, type_name)                 \
-  COGL_OBJECT_DEFINE_WITH_CODE_GTYPE (TypeName, type_name, (void) 0)
+  COGL_OBJECT_DEFINE_WITH_CODE (TypeName, type_name, (void) 0)
 
 #define COGL_OBJECT_INTERNAL_DEFINE(TypeName, type_name)         \
   COGL_OBJECT_INTERNAL_DEFINE_WITH_CODE (TypeName, type_name, (void) 0)
