@@ -588,11 +588,20 @@ typedef void (*CoglFrameCallback) (CoglOnscreen *onscreen,
  */
 typedef struct _CoglClosure CoglFrameClosure;
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_frame_closure_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_frame_closure_get_gtype (void);
+#endif
+
 /**
  * cogl_onscreen_add_frame_callback:
  * @onscreen: A #CoglOnscreen framebuffer
- * @callback: A callback function to call for frame events
- * @user_data: A private pointer to be passed to @callback
+ * @callback: (scope notified): A callback function to call for frame events
+ * @user_data: (closure): A private pointer to be passed to @callback
  * @destroy: An optional callback to destroy @user_data when the
  *           @callback is removed or @onscreen is freed.
  *
@@ -753,12 +762,21 @@ typedef void (*CoglOnscreenResizeCallback) (CoglOnscreen *onscreen,
  */
 typedef struct _CoglClosure CoglOnscreenResizeClosure;
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_onscreen_resize_closure_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_onscreen_resize_closure_get_gtype (void);
+#endif
+
 /**
  * cogl_onscreen_add_resize_callback:
  * @onscreen: A #CoglOnscreen framebuffer
- * @callback: A #CoglOnscreenResizeCallback to call when the @onscreen
- *            changes size.
- * @user_data: Private data to be passed to @callback.
+ * @callback: (scope notified): A #CoglOnscreenResizeCallback to call
+ *            when the @onscreen changes size.
+ * @user_data: (closure): Private data to be passed to @callback.
  * @destroy: An optional callback to destroy @user_data when the
  *           @callback is removed or @onscreen is freed.
  *
@@ -860,11 +878,20 @@ typedef void (*CoglOnscreenDirtyCallback) (CoglOnscreen *onscreen,
  */
 typedef struct _CoglClosure CoglOnscreenDirtyClosure;
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+/**
+ * cogl_onscreen_dirty_closure_get_gtype:
+ *
+ * Returns: a #GType that can be used with the GLib type system.
+ */
+GType cogl_onscreen_dirty_closure_get_gtype (void);
+#endif
+
 /**
  * cogl_onscreen_add_dirty_callback:
  * @onscreen: A #CoglOnscreen framebuffer
- * @callback: A callback function to call for dirty events
- * @user_data: A private pointer to be passed to @callback
+ * @callback: (scope notified): A callback function to call for dirty events
+ * @user_data: (closure): A private pointer to be passed to @callback
  * @destroy: An optional callback to destroy @user_data when the
  *           @callback is removed or @onscreen is freed.
  *
