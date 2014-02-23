@@ -33,6 +33,10 @@
 #ifndef __COGL_ERROR_H__
 #define __COGL_ERROR_H__
 
+#ifdef COGL_HAS_GTYPE_SUPPORT
+#include <glib-object.h>
+#endif
+
 #include "cogl-types.h"
 
 COGL_BEGIN_DECLS
@@ -117,11 +121,15 @@ COGL_BEGIN_DECLS
  * @code: A specific error code within a specified domain
  * @message: A human readable error message
  */
+#ifdef COGL_HAS_GLIB_SUPPORT
+#define CoglError GError
+#else
 typedef struct _CoglError {
   uint32_t domain;
   int code;
   char *message;
 } CoglError;
+#endif
 
 /**
  * cogl_error_free:
