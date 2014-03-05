@@ -988,3 +988,11 @@ _cogl_winsys_wgl_get_vtable (void)
 
   return &vtable;
 }
+
+HGLRC
+cogl_wgl_context_get_wgl_context (CoglContext *context)
+{
+  CoglDisplayWgl *display_wgl = context->display->winsys;
+
+  return display_wgl->wgl_context;
+}
