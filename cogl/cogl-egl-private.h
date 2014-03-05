@@ -28,37 +28,13 @@
  *
  */
 
-#ifndef __COGL_EGL_H__
-#define __COGL_EGL_H__
-
-#ifdef COGL_HAS_EGL_SUPPORT
+#ifndef __COGL_EGL_PRIVATE_H__
+#define __COGL_EGL_PRIVATE_H__
 
 #include "cogl-egl-defines.h"
-
-COGL_BEGIN_DECLS
 
 #ifndef GL_OES_EGL_image
 #define GLeglImageOES void *
 #endif
 
-/**
- * cogl_egl_context_get_egl_display:
- * @context: A #CoglContext pointer
- *
- * If you have done a runtime check to determine that Cogl is using
- * EGL internally then this API can be used to retrieve the EGLDisplay
- * handle that was setup internally. The result is undefined if Cogl
- * is not using EGL.
- *
- * Return value: The internally setup EGLDisplay handle.
- * Since: 1.8
- * Stability: unstable
- */
-EGLDisplay
-cogl_egl_context_get_egl_display (CoglContext *context);
-
-COGL_END_DECLS
-
-#endif /* COGL_HAS_EGL_SUPPORT */
-
-#endif
+#endif /* __COGL_EGL_PRIVATE_H__ */

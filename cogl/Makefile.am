@@ -447,12 +447,11 @@ cogl_sources_c += \
 	$(srcdir)/winsys/cogl-winsys-egl-android-private.h
 endif
 if SUPPORT_EGL
-cogl_public_h += \
-       $(srcdir)/cogl-egl.h
 cogl_nodist_experimental_h += \
        $(builddir)/cogl-egl-defines.h
 
 cogl_sources_c += \
+       $(srcdir)/cogl-egl-private.h \
        $(srcdir)/winsys/cogl-winsys-egl.c \
        $(srcdir)/winsys/cogl-winsys-egl-feature-functions.h \
        $(srcdir)/winsys/cogl-winsys-egl-private.h
