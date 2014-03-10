@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: cogl master\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=cogl&keywords=I18N+L10N&component=general\n"
-"POT-Creation-Date: 2012-09-07 13:16+0000\n"
-"PO-Revision-Date: 2012-09-23 12:50+0800\n"
+"POT-Creation-Date: 2014-03-10 04:10+0000\n"
+"PO-Revision-Date: 2014-01-24 21:11+0800\n"
 "Last-Translator: YunQiang Su <wzssyqa@gmail.com>\n"
 "Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
 "Language: zh_CN\n"
@@ -40,11 +40,27 @@ msgstr "附加环境变量："
 
 #: ../cogl/cogl-debug.c:191
 msgid "Comma-separated list of GL extensions to pretend are disabled"
-msgstr ""
+msgstr "逗号分隔的待模拟(pretend) GL 扩展列表是禁用的"
 
 #: ../cogl/cogl-debug.c:193
 msgid "Override the GL version that Cogl will assume the driver supports"
 msgstr "覆盖 Cogl 将假设驱动支持的 GL 版本"
+
+#: ../cogl/cogl-debug.c:237
+msgid "Cogl debugging flags to set"
+msgstr "要设置的 Cogl 调试选项"
+
+#: ../cogl/cogl-debug.c:239
+msgid "Cogl debugging flags to unset"
+msgstr "要清除的 Cogl 调试选项"
+
+#: ../cogl/cogl-debug.c:288
+msgid "Cogl Options"
+msgstr "Cogl 选项"
+
+#: ../cogl/cogl-debug.c:289
+msgid "Show Cogl options"
+msgstr "显示  Cogl 选项"
 
 #: ../cogl/cogl-debug-options.h:25 ../cogl/cogl-debug-options.h:30
 #: ../cogl/cogl-debug-options.h:35 ../cogl/cogl-debug-options.h:40
@@ -249,14 +265,12 @@ msgid "Disable use of ARB fragment programs"
 msgstr "禁用 ARB 分割程序"
 
 #: ../cogl/cogl-debug-options.h:134
-#, fuzzy
 msgid "Disable fixed"
-msgstr "禁止定点"
+msgstr "禁止固定(fixed)"
 
 #: ../cogl/cogl-debug-options.h:135
-#, fuzzy
 msgid "Disable use of the fixed function pipeline backend"
-msgstr "禁用定点函数管道后端"
+msgstr "禁用固定的(fixed)函数管道后端"
 
 #: ../cogl/cogl-debug-options.h:139
 msgid "Disable GLSL"
@@ -275,17 +289,16 @@ msgid "Disable use of blending"
 msgstr "禁止使用混合"
 
 #: ../cogl/cogl-debug-options.h:149
-#, fuzzy
 msgid "Disable non-power-of-two textures"
-msgstr "禁用 non-power-of-two 纹理"
+msgstr "禁用非2的幂(non-power-of-two)的纹理"
 
 #: ../cogl/cogl-debug-options.h:150
-#, fuzzy
 msgid ""
 "Makes Cogl think that the GL driver doesn't support NPOT textures so that it "
 "will create sliced textures or textures with waste instead."
 msgstr ""
-"使 Cogl 认为 GL 驱动不支持 NPOT 纹理，以便使它创建切片纹理或用无效纹理代替。"
+"使 Cogl 认为 GL 驱动不支持 NPOT 纹理，以便使它创建切片纹理或用带冗余(waste)纹"
+"理代替。"
 
 #: ../cogl/cogl-debug-options.h:155
 msgid "Disable software clipping"
@@ -312,14 +325,12 @@ msgid "Traces some select OpenGL calls"
 msgstr "跟踪某些选择 OpenGL 的调用"
 
 #: ../cogl/cogl-debug-options.h:170
-#, fuzzy
 msgid "Trace offscreen support"
-msgstr "跟踪幕后支持"
+msgstr "跟踪幕后(offscreen)支持"
 
 #: ../cogl/cogl-debug-options.h:171
-#, fuzzy
 msgid "Debug offscreen support"
-msgstr "调试幕后支持"
+msgstr "调试幕后(offscreen)支持"
 
 #: ../cogl/cogl-debug-options.h:175
 msgid "Disable program caches"
@@ -353,15 +364,3 @@ msgstr "跟踪性能问题"
 #: ../cogl/cogl-debug-options.h:192
 msgid "Tries to highlight sub-optimal Cogl usage."
 msgstr "尝试突出显示欠佳的 Cogl 使用。"
-
-#~ msgid "Cogl debugging flags to set"
-#~ msgstr "要设置的 Cogl 调试选项"
-
-#~ msgid "Cogl debugging flags to unset"
-#~ msgstr "要清除的 Cogl 调试选项"
-
-#~ msgid "Cogl Options"
-#~ msgstr "Cogl 选项"
-
-#~ msgid "Show Cogl options"
-#~ msgstr "显示  Cogl 选项"
