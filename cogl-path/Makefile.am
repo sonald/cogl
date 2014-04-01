@@ -56,6 +56,17 @@ source_1_x_h = \
 	$(srcdir)/cogl1-path-functions.h \
 	$(NULL)
 
+source_1_x_intro_h = \
+	$(source_1_x_h) \
+	$(srcdir)/cogl-path.h \
+	$(NULL)
+
+source_2_x_intro_h = \
+	$(srcdir)/cogl-path-types.h \
+	$(srcdir)/cogl2-path-functions.h \
+	$(srcdir)/cogl-path.h \
+	$(NULL)
+
 source_h = \
 	cogl-path.h \
 	$(source_1_x_h) \
@@ -101,7 +112,7 @@ nodist_cogl_pathheaders_HEADERS = cogl-path-enum-types.h
 endif
 
 pc_files = cogl-path-1.0.pc \
-	   cogl-path-2.0-experimental.pc
+	   cogl-path-$(COGL_API_VERSION)-experimental.pc
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = $(pc_files)
@@ -120,3 +131,54 @@ MSVC_PROJECT_SRCS = $(source_c)
 MSVC_PROJECT_EXCLUDES = dummy
 
 include $(top_srcdir)/build/Makefile-msvcproj.mak
+
+-include $(INTROSPECTION_MAKEFILE)
+
+INTROSPECTION_GIRS =
+
+if HAVE_INTROSPECTION
+INTROSPECTION_COMPILER_ARGS=--includedir=$(top_builddir)/cogl
+
+CoglPath-1.0.gir: libcogl-path.la Makefile
+
+CoglPath_1_0_gir_NAMESPACE = CoglPath
+CoglPath_1_0_gir_VERSION = 1.0
+CoglPath_1_0_gir_LIBS = $(top_builddir)/cogl/libcogl.la libcogl-path.la
+CoglPath_1_0_gir_FILES = $(source_1_x_intro_h)
+CoglPath_1_0_gir_CFLAGS = $(AM_CPPFLAGS) $(COGL_DEP_CFLAGS) $(COGL_EXTRA_CFLAGS) $(MAINTAINER_CFLAGS)
+CoglPath_1_0_gir_INCLUDES =
+CoglPath_1_0_gir_EXPORT_PACKAGES = cogl-path-1.0
+CoglPath_1_0_gir_SCANNERFLAGS = \
+	--warn-all \
+	--identifier-prefix=Cogl \
+	--symbol-prefix=cogl_ \
+	--c-include='cogl-path/cogl-path.h' \
+	--include-uninstalled=$(top_builddir)/cogl/Cogl-1.0.gir
+
+CoglPath-2.0.gir: libcogl-path.la Makefile
+
+CoglPath_2_0_gir_NAMESPACE = CoglPath
+CoglPath_2_0_gir_VERSION = 2.0
+CoglPath_2_0_gir_LIBS = $(top_builddir)/cogl/libcogl.la libcogl-path.la
+CoglPath_2_0_gir_FILES = $(source_2_x_intro_h)
+CoglPath_2_0_gir_CFLAGS = $(AM_CPPFLAGS) $(COGL_DEP_CFLAGS) $(COGL_EXTRA_CFLAGS) $(MAINTAINER_CFLAGS)
+CoglPath_2_0_gir_INCLUDES =
+CoglPath_2_0_gir_EXPORT_PACKAGES = cogl-path-2.0-experimental
+CoglPath_2_0_gir_SCANNERFLAGS = \
+	--warn-all \
+	--identifier-prefix=Cogl \
+	--symbol-prefix=cogl_ \
+	--symbol-prefix=cogl2_ \
+	--c-include='cogl-path/cogl-path.h' \
+	--include-uninstalled=$(top_builddir)/cogl/Cogl-2.0.gir
+
+INTROSPECTION_GIRS += CoglPath-1.0.gir CoglPath-2.0.gir
+
+girdir = $(datadir)/gir-1.0
+gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibdir = $(libdir)/girepository-1.0
+typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES += $(gir_DATA) $(typelib_DATA)
+endif
