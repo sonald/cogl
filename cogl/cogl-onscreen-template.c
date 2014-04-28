@@ -94,3 +94,11 @@ cogl_onscreen_template_set_has_alpha (CoglOnscreenTemplate *onscreen_template,
 {
   onscreen_template->config.has_alpha = has_alpha;
 }
+
+void
+cogl_onscreen_template_set_stereo_enabled (
+					   CoglOnscreenTemplate *onscreen_template,
+					   CoglBool enabled)
+{
+  onscreen_template->config.stereo_enabled = enabled;
+}

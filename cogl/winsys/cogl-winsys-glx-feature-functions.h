@@ -176,6 +176,7 @@ COGL_WINSYS_FEATURE_BEGIN (255, 255,
                            "INTEL\0",
                            "swap_event\0",
                            COGL_WINSYS_FEATURE_SYNC_AND_COMPLETE_EVENT)
+
 COGL_WINSYS_FEATURE_END ()
 
 COGL_WINSYS_FEATURE_BEGIN (255, 255,
