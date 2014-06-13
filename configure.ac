@@ -304,7 +304,6 @@ AS_IF([test "x$enable_emscripten" = "xyes"],
         enable_sdl=yes
         enable_gles2=yes
         enable_gl=no
-        AC_DEFINE([USING_EMSCRIPTEN], 1, [Cogl is being compiled with emscripten])
         COGL_DEFINES_SYMBOLS="$COGL_DEFINES_SYMBOLS COGL_HAS_EMSCRIPTEN_SUPPORT"
       ]
 )
