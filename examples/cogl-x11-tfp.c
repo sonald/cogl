@@ -27,12 +27,13 @@
 static pid_t gears_pid = 0;
 
 static void
-spawn_gears (void)
+spawn_gears (CoglBool stereo)
 {
   pid_t pid = fork();
 
   if (pid == 0)
     execlp ("glxgears", "glxgears",
+            stereo ? "-stereo" : NULL,
             NULL);
 
   gears_pid = pid;
@@ -142,10 +143,11 @@ main (int argc, char **argv)
   Atom atom_wm_delete_window;
   int screen;
   CoglBool gears = FALSE;
+  CoglBool stereo = FALSE;
   Window tfp_xwin = None;
   Pixmap pixmap;
   CoglTexturePixmapX11 *tfp;
-  CoglTexture *right_texture;
+  CoglTexture *right_texture = NULL;
   GC gc = None;
   int i;
 
@@ -153,9 +155,11 @@ main (int argc, char **argv)
     {
       if (strcmp (argv[i], "--gears") == 0)
         gears = TRUE;
+      else if (strcmp (argv[i], "--stereo") == 0)
+        stereo = TRUE;
       else
         {
-          g_printerr ("Usage: cogl-x11-tfp [--gears]\n");
+          g_printerr ("Usage: cogl-x11-tfp [--gears] [--stereo]\n");
           return 1;
         }
     }
@@ -187,7 +191,7 @@ main (int argc, char **argv)
 
   if (gears)
     {
-      spawn_gears ();
+      spawn_gears (stereo);
       while (TRUE)
         {
           tfp_xwin = find_gears_toplevel (xdpy, None);
@@ -209,7 +213,8 @@ main (int argc, char **argv)
 
   /* Request that onscreen framebuffers should have an alpha component */
   onscreen_template = cogl_onscreen_template_new ();
-  cogl_onscreen_template_set_has_alpha (onscreen_template, TRUE);
+  if (stereo)
+    cogl_onscreen_template_set_stereo_enabled (onscreen_template, TRUE);
 
   /* Give Cogl our template for onscreen windows which can influence
    * how the context will be setup */
@@ -310,7 +315,17 @@ main (int argc, char **argv)
 
   pixmap = XCompositeNameWindowPixmap (xdpy, tfp_xwin);
 
-  tfp = cogl_texture_pixmap_x11_new (ctx, pixmap, TRUE, &error);
+  if (stereo)
+    {
+      tfp = cogl_texture_pixmap_x11_new_left (ctx, pixmap, TRUE, &error);
+      if (tfp)
+        right_texture = cogl_texture_pixmap_x11_new_right (tfp);
+    }
+  else
+    {
+      tfp = cogl_texture_pixmap_x11_new (ctx, pixmap, TRUE, &error);
+    }
+
   if (!tfp)
     {
       fprintf (stderr, "Failed to create CoglTexturePixmapX11: %s",
@@ -359,10 +374,22 @@ main (int argc, char **argv)
         }
 
       cogl_framebuffer_clear4f (fb, COGL_BUFFER_BIT_COLOR, 0, 0, 0, 1);
+
       pipeline = cogl_pipeline_new (ctx);
+
+      cogl_framebuffer_set_stereo_mode (onscreen, COGL_STEREO_LEFT);
       cogl_pipeline_set_layer_texture (pipeline, 0, tfp);
       cogl_framebuffer_draw_rectangle (fb, pipeline, -0.8, 0.8, 0.8, -0.8);
+
+      if (stereo)
+	{
+	  cogl_framebuffer_set_stereo_mode (onscreen, COGL_STEREO_RIGHT);
+	  cogl_pipeline_set_layer_texture (pipeline, 0, right_texture);
+	  cogl_framebuffer_draw_rectangle (fb, pipeline, -0.8, 0.8, 0.8, -0.8);
+	}
+
       cogl_object_unref (pipeline);
+
       cogl_onscreen_swap_buffers (onscreen);
     }
 
