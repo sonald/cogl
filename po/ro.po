@@ -1,0 +1,364 @@
+# Romanian translation for cogl.
+# Copyright (C) 2011 cogl's COPYRIGHT HOLDER
+# This file is distributed under the same license as the cogl package.
+# uara <rov_93@yahoo.com>, 2011.
+# Daniel Șerbănescu <daniel [at] serbanescu [dot] dk>, 2014.
+msgid ""
+msgstr ""
+"Project-Id-Version: cogl master\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=cogl&ke"
+"ywords=I18N+L10N&component=general\n"
+"POT-Creation-Date: 2014-01-14 23:06+0000\n"
+"PO-Revision-Date: 2014-11-30 13:14+0200\n"
+"Last-Translator: Daniel Șerbănescu <daniel [at] serbanescu [dot] dk>\n"
+"Language-Team: Gnome Romanian Translation Team\n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
+"20)) ? 1 : 2);;\n"
+"X-Generator: Virtaal 0.7.1\n"
+"X-Project-Style: gnome\n"
+
+#: ../cogl/cogl-debug.c:180
+msgid "Supported debug values:"
+msgstr "Valori de depanare admise:"
+
+#: ../cogl/cogl-debug.c:185
+msgid "Special debug values:"
+msgstr "Valorile speciale de depanare:"
+
+#: ../cogl/cogl-debug.c:187 ../cogl/cogl-debug.c:189
+msgid "Enables all non-behavioural debug options"
+msgstr "Permite toate opțiunile necomportamentale de depanare"
+
+#: ../cogl/cogl-debug.c:196
+msgid "Additional environment variables:"
+msgstr "Varabile adiționale ale mediului:"
+
+#: ../cogl/cogl-debug.c:197
+msgid "Comma-separated list of GL extensions to pretend are disabled"
+msgstr ""
+
+#: ../cogl/cogl-debug.c:199
+msgid "Override the GL version that Cogl will assume the driver supports"
+msgstr ""
+
+#: ../cogl/cogl-debug-options.h:32 ../cogl/cogl-debug-options.h:37
+#: ../cogl/cogl-debug-options.h:42 ../cogl/cogl-debug-options.h:47
+#: ../cogl/cogl-debug-options.h:52 ../cogl/cogl-debug-options.h:57
+#: ../cogl/cogl-debug-options.h:62 ../cogl/cogl-debug-options.h:68
+#: ../cogl/cogl-debug-options.h:73 ../cogl/cogl-debug-options.h:78
+#: ../cogl/cogl-debug-options.h:165 ../cogl/cogl-debug-options.h:170
+#: ../cogl/cogl-debug-options.h:175 ../cogl/cogl-debug-options.h:191
+#: ../cogl/cogl-debug-options.h:196
+msgid "Cogl Tracing"
+msgstr "Monitorizarea Cogl"
+
+#: ../cogl/cogl-debug-options.h:34
+msgid "CoglObject references"
+msgstr "CoglObiect referințe"
+
+#: ../cogl/cogl-debug-options.h:35
+msgid "Debug ref counting issues for CoglObjects"
+msgstr "Depanare ref numără probleme pentru CoglObjects"
+
+#: ../cogl/cogl-debug-options.h:39
+msgid "Trace Texture Slicing"
+msgstr "Trasează impărțirea texturilor"
+
+#: ../cogl/cogl-debug-options.h:40
+msgid "debug the creation of texture slices"
+msgstr "depanează creearea părților de textură"
+
+#: ../cogl/cogl-debug-options.h:44
+msgid "Trace Atlas Textures"
+msgstr "Trasează texturi Atlas"
+
+#: ../cogl/cogl-debug-options.h:45
+msgid "Debug texture atlas management"
+msgstr "Depanează administrarea texturilor atlas"
+
+#: ../cogl/cogl-debug-options.h:49
+msgid "Trace Blend Strings"
+msgstr "Trasează șirurile amestecate"
+
+#: ../cogl/cogl-debug-options.h:50
+msgid "Debug CoglBlendString parsing"
+msgstr "Depanează prelucrarea CoglBlendString"
+
+#: ../cogl/cogl-debug-options.h:54
+msgid "Trace Journal"
+msgstr "Trasează jurnalul"
+
+#: ../cogl/cogl-debug-options.h:55
+msgid "View all the geometry passing through the journal"
+msgstr "Vizualizeză toată geometria ce trece prin jurnal"
+
+#: ../cogl/cogl-debug-options.h:59
+msgid "Trace Batching"
+msgstr "Trasează Serierea"
+
+#: ../cogl/cogl-debug-options.h:60
+msgid "Show how geometry is being batched in the journal"
+msgstr "Arată cum este înregistrată geometria în revistă"
+
+#: ../cogl/cogl-debug-options.h:64
+msgid "Trace matrices"
+msgstr "Trasează matricele"
+
+#: ../cogl/cogl-debug-options.h:65
+msgid "Trace all matrix manipulation"
+msgstr "Trasează toate manipulările de matrici"
+
+#: ../cogl/cogl-debug-options.h:70
+msgid "Trace Misc Drawing"
+msgstr "Trasează Diverse Desene"
+
+#: ../cogl/cogl-debug-options.h:71
+msgid "Trace some misc drawing operations"
+msgstr "Trasează unele operații diverse de desenare"
+
+#: ../cogl/cogl-debug-options.h:75
+msgid "Trace Pango Renderer"
+msgstr "Trasează Pango Randor"
+
+#: ../cogl/cogl-debug-options.h:76
+msgid "Trace the Cogl Pango renderer"
+msgstr "Trasează randor Cogl Pango"
+
+#: ../cogl/cogl-debug-options.h:80
+msgid "Trace CoglTexturePixmap backend"
+msgstr "Trasează TexturaCoglPixmap backend"
+
+#: ../cogl/cogl-debug-options.h:81
+msgid "Trace the Cogl texture pixmap backend"
+msgstr "Trasează textura pixelilor interfeței Cogl"
+
+#: ../cogl/cogl-debug-options.h:83 ../cogl/cogl-debug-options.h:88
+msgid "Visualize"
+msgstr "Vizualizează"
+
+#: ../cogl/cogl-debug-options.h:85
+msgid "Outline rectangles"
+msgstr "Conturează dreptunghiuri"
+
+#: ../cogl/cogl-debug-options.h:86
+msgid "Add wire outlines for all rectangular geometry"
+msgstr "Adaugă contur tip fir pentru toate formele dreptunghiulare"
+
+#: ../cogl/cogl-debug-options.h:90
+msgid "Show wireframes"
+msgstr "Arată contururi tip fir"
+
+#: ../cogl/cogl-debug-options.h:91
+msgid "Add wire outlines for all geometry"
+msgstr "Adaugă contururi tip fir pentru toate formele "
+
+#: ../cogl/cogl-debug-options.h:93 ../cogl/cogl-debug-options.h:98
+#: ../cogl/cogl-debug-options.h:103 ../cogl/cogl-debug-options.h:108
+#: ../cogl/cogl-debug-options.h:118 ../cogl/cogl-debug-options.h:123
+#: ../cogl/cogl-debug-options.h:129 ../cogl/cogl-debug-options.h:134
+#: ../cogl/cogl-debug-options.h:139 ../cogl/cogl-debug-options.h:144
+#: ../cogl/cogl-debug-options.h:149 ../cogl/cogl-debug-options.h:154
+#: ../cogl/cogl-debug-options.h:160 ../cogl/cogl-debug-options.h:180
+#: ../cogl/cogl-debug-options.h:185
+msgid "Root Cause"
+msgstr "Rădăcina Cauzei"
+
+#: ../cogl/cogl-debug-options.h:95
+msgid "Disable Journal batching"
+msgstr "Dezactivează serierea Revistei"
+
+#: ../cogl/cogl-debug-options.h:96
+msgid "Disable batching of geometry in the Cogl Journal."
+msgstr "Dezactivează serierea formelor in Revista Cogl"
+
+#: ../cogl/cogl-debug-options.h:100
+msgid "Disable GL Vertex Buffers"
+msgstr "Dezactivează Bufferele GL Vertex "
+
+#: ../cogl/cogl-debug-options.h:101
+msgid "Disable use of OpenGL vertex buffer objects"
+msgstr "Dezactivează folosirea obiectelor tampon ale OpenGL vertex"
+
+#: ../cogl/cogl-debug-options.h:105
+msgid "Disable GL Pixel Buffers"
+msgstr "Dezactivează Tampoanele GL pixel"
+
+#: ../cogl/cogl-debug-options.h:106
+msgid "Disable use of OpenGL pixel buffer objects"
+msgstr "Dezactivează folosirea obiectelor tampon ale pixelilor OpenGL"
+
+#: ../cogl/cogl-debug-options.h:110
+msgid "Disable software rect transform"
+msgstr "Dezactivează transformarea dreptunghiurilor făcută de software"
+
+#: ../cogl/cogl-debug-options.h:111
+msgid "Use the GPU to transform rectangular geometry"
+msgstr "Folosește GPU pentru a transforma formele dreptunghiulare"
+
+#: ../cogl/cogl-debug-options.h:113
+msgid "Cogl Specialist"
+msgstr "Specialist Cogl"
+
+#: ../cogl/cogl-debug-options.h:115
+msgid "Dump atlas images"
+msgstr "Aruncă imaginile atlas"
+
+#: ../cogl/cogl-debug-options.h:116
+msgid "Dump texture atlas changes to an image file"
+msgstr "Aruncă modificările cartografiate texturii unui fișier de tip imagine"
+
+#: ../cogl/cogl-debug-options.h:120
+msgid "Disable texture atlasing"
+msgstr "Dezactivează textura cartografiată"
+
+#: ../cogl/cogl-debug-options.h:121
+msgid "Disable use of texture atlasing"
+msgstr "Dezactivează folosirea texturii cartografiate"
+
+#: ../cogl/cogl-debug-options.h:125
+msgid "Disable sharing the texture atlas between text and images"
+msgstr "Dezactivează schimbul de texturi cartografiate dintre text și imagini"
+
+#: ../cogl/cogl-debug-options.h:126
+msgid ""
+"When this is set the glyph cache will always use a separate texture for its "
+"atlas. Otherwise it will try to share the atlas with images."
+msgstr ""
+"Când este setat simbolul arhivei se va folosi o textură separată pentru "
+"atlas. În caz contrar se va încerca afișarea atlasului cu imagini."
+
+#: ../cogl/cogl-debug-options.h:131
+msgid "Disable texturing"
+msgstr "Dezactivează texturarea"
+
+#: ../cogl/cogl-debug-options.h:132
+msgid "Disable texturing any primitives"
+msgstr "Dezactivează texturarea oricăror primitve"
+
+#: ../cogl/cogl-debug-options.h:136
+msgid "Disable arbfp"
+msgstr "Dezactivează arbfp"
+
+#: ../cogl/cogl-debug-options.h:137
+msgid "Disable use of ARB fragment programs"
+msgstr "Dezactivează folosirea fragmentelor de program ARB"
+
+#: ../cogl/cogl-debug-options.h:141
+msgid "Disable fixed"
+msgstr "Dezactivare fixată"
+
+#: ../cogl/cogl-debug-options.h:142
+msgid "Disable use of the fixed function pipeline backend"
+msgstr "Dezactivează folosirea liniei de asamblare a funcțiilor fixate"
+
+#: ../cogl/cogl-debug-options.h:146
+msgid "Disable GLSL"
+msgstr "Dezactivează GLSL"
+
+#: ../cogl/cogl-debug-options.h:147
+msgid "Disable use of GLSL"
+msgstr "Dezactivează folosirea GLSL"
+
+#: ../cogl/cogl-debug-options.h:151
+msgid "Disable blending"
+msgstr "Dezactivează amestecarea"
+
+#: ../cogl/cogl-debug-options.h:152
+msgid "Disable use of blending"
+msgstr "Dezactivează folosirea amestecării"
+
+#: ../cogl/cogl-debug-options.h:156
+msgid "Disable non-power-of-two textures"
+msgstr "Dezactivează ne-puterea-a-două texturi"
+
+#: ../cogl/cogl-debug-options.h:157
+msgid ""
+"Makes Cogl think that the GL driver doesn't support NPOT textures so that it "
+"will create sliced textures or textures with waste instead."
+msgstr ""
+"Induce Cogl să creadă că driverul GL nu suportă texturi NPOT astfel încât va "
+"creea bucăți de texturi sau în loc texturi cu risipă"
+
+#: ../cogl/cogl-debug-options.h:162
+msgid "Disable software clipping"
+msgstr "Dezactivează taierea de software"
+
+#: ../cogl/cogl-debug-options.h:163
+msgid "Disables Cogl's attempts to clip some rectangles in software."
+msgstr ""
+"Dezactivează încercările Cogl de a tăia unele dreptunghiuri în software."
+
+#: ../cogl/cogl-debug-options.h:167
+msgid "Show source"
+msgstr "Arată sursa"
+
+#: ../cogl/cogl-debug-options.h:168
+msgid "Show generated ARBfp/GLSL source code"
+msgstr "Arată codul sursă ARBfp/GLS generat"
+
+#: ../cogl/cogl-debug-options.h:172
+msgid "Trace some OpenGL"
+msgstr "Trasează unele OpenGL"
+
+#: ../cogl/cogl-debug-options.h:173
+msgid "Traces some select OpenGL calls"
+msgstr "Traseele unor apeluri selectate OpenGL"
+
+#: ../cogl/cogl-debug-options.h:177
+msgid "Trace offscreen support"
+msgstr "Trasează ajutorul offscreen"
+
+#: ../cogl/cogl-debug-options.h:178
+msgid "Debug offscreen support"
+msgstr "Depanează ajutorul offscreen"
+
+#: ../cogl/cogl-debug-options.h:182
+msgid "Disable program caches"
+msgstr "Dezactivează arhivele programului"
+
+#: ../cogl/cogl-debug-options.h:183
+msgid "Disable fallback caches for arbfp and glsl programs"
+msgstr "Dezactivează retragerea arhivelor programelor pentru arbfp și glsl"
+
+#: ../cogl/cogl-debug-options.h:187
+msgid "Disable read pixel optimization"
+msgstr "Dezactivează optimizarea citirii pixelului"
+
+#: ../cogl/cogl-debug-options.h:188
+msgid ""
+"Disable optimization for reading 1px for simple scenes of opaque rectangles"
+msgstr ""
+"Dezactivază optimizarea pentru citirea unui pixel pentru tablouri simple de "
+"dreptunghiuri opaci"
+
+#: ../cogl/cogl-debug-options.h:193
+msgid "Trace clipping"
+msgstr "Trasează tăierea"
+
+#: ../cogl/cogl-debug-options.h:194
+msgid "Logs information about how Cogl is implementing clipping"
+msgstr "Înregistrează informațiile despre cum implementează Cogl tăierea"
+
+#: ../cogl/cogl-debug-options.h:198
+msgid "Trace performance concerns"
+msgstr ""
+
+#: ../cogl/cogl-debug-options.h:199
+msgid "Tries to highlight sub-optimal Cogl usage."
+msgstr ""
+
+#~ msgid "Cogl debugging flags to set"
+#~ msgstr "Steaguri de depanare Cogl de setat"
+
+#~ msgid "Cogl debugging flags to unset"
+#~ msgstr "Steaguri de depanare Cogl de desetat"
+
+#~ msgid "Cogl Options"
+#~ msgstr "Opțiuni Cogl"
+
+#~ msgid "Show Cogl options"
+#~ msgstr "Arată opțiunile Cogl"
