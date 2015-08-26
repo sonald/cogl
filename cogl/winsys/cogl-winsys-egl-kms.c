@@ -116,7 +116,7 @@ typedef struct _CoglOnscreenKMS
   struct gbm_surface *pending_surface;
 } CoglOnscreenKMS;
 
-static const char device_name[] = "/dev/dri/card0";
+static const char card_device_name[] = "/dev/dri/card0";
 
 static void
 _cogl_winsys_renderer_disconnect (CoglRenderer *renderer)
@@ -320,14 +320,14 @@ _cogl_winsys_renderer_connect (CoglRenderer *renderer,
     }
   else
     {
-      kms_renderer->opened_fd = open (device_name, O_RDWR);
+      kms_renderer->opened_fd = open (card_device_name, O_RDWR);
       kms_renderer->fd = kms_renderer->opened_fd;
       if (kms_renderer->fd < 0)
         {
           /* Probably permissions error */
           _cogl_set_error (error, COGL_WINSYS_ERROR,
                            COGL_WINSYS_ERROR_INIT,
-                           "Couldn't open %s", device_name);
+                           "Couldn't open %s", card_device_name);
           return FALSE;
         }
     }
