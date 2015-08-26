@@ -66,11 +66,16 @@ static const CoglWinsysEGLVtable _cogl_winsys_egl_vtable;
 
 static const CoglWinsysVtable *parent_vtable;
 
-typedef struct _CoglRendererKMS
+typedef struct _CoglRendererDeviceKMS
 {
   int fd;
-  int opened_fd;
   struct gbm_device *gbm;
+  CoglBool is_borrowed;
+} CoglRendererDeviceKMS;
+
+typedef struct _CoglRendererKMS
+{
+  CoglRendererDeviceKMS card_device;
   CoglClosure *swap_notify_idle;
   CoglBool     page_flips_not_supported;
 } CoglRendererKMS;
@@ -127,11 +132,11 @@ _cogl_winsys_renderer_disconnect (CoglRenderer *renderer)
   if (egl_renderer->edpy != EGL_NO_DISPLAY)
     eglTerminate (egl_renderer->edpy);
 
-  if (kms_renderer->gbm != NULL)
-    gbm_device_destroy (kms_renderer->gbm);
+  if (kms_renderer->card_device.gbm != NULL)
+    gbm_device_destroy (kms_renderer->card_device.gbm);
 
-  if (kms_renderer->opened_fd >= 0)
-    close (kms_renderer->opened_fd);
+  if (!kms_renderer->card_device.is_borrowed && kms_renderer->card_device.fd >= 0)
+    close (kms_renderer->card_device.fd);
 
   g_slice_free (CoglRendererKMS, kms_renderer);
   g_slice_free (CoglRendererEGL, egl_renderer);
@@ -191,7 +196,7 @@ free_current_bo (CoglOnscreen *onscreen)
 
   if (kms_onscreen->current_fb_id)
     {
-      drmModeRmFB (kms_renderer->fd,
+      drmModeRmFB (kms_renderer->card_device.fd,
                    kms_onscreen->current_fb_id);
       kms_onscreen->current_fb_id = 0;
     }
@@ -279,7 +284,7 @@ handle_drm_event (CoglRendererKMS *kms_renderer)
   memset (&evctx, 0, sizeof evctx);
   evctx.version = DRM_EVENT_CONTEXT_VERSION;
   evctx.page_flip_handler = page_flip_handler;
-  drmHandleEvent (kms_renderer->fd, &evctx);
+  drmHandleEvent (kms_renderer->card_device.fd, &evctx);
 }
 
 static void
@@ -309,20 +314,19 @@ _cogl_winsys_renderer_connect (CoglRenderer *renderer,
   egl_renderer->platform = g_slice_new0 (CoglRendererKMS);
   kms_renderer = egl_renderer->platform;
 
-  kms_renderer->fd = -1;
-  kms_renderer->opened_fd = -1;
+  kms_renderer->card_device.fd = -1;
 
   egl_renderer->edpy = EGL_NO_DISPLAY;
 
   if (renderer->kms_fd >= 0)
     {
-      kms_renderer->fd = renderer->kms_fd;
+      kms_renderer->card_device.fd = renderer->kms_fd;
+      kms_renderer->card_device.is_borrowed = TRUE;
     }
   else
     {
-      kms_renderer->opened_fd = open (card_device_name, O_RDWR);
-      kms_renderer->fd = kms_renderer->opened_fd;
-      if (kms_renderer->fd < 0)
+      kms_renderer->card_device.fd = open (card_device_name, O_RDWR);
+      if (kms_renderer->card_device.fd < 0)
         {
           /* Probably permissions error */
           _cogl_set_error (error, COGL_WINSYS_ERROR,
@@ -332,8 +336,8 @@ _cogl_winsys_renderer_connect (CoglRenderer *renderer,
         }
     }
 
-  kms_renderer->gbm = gbm_create_device (kms_renderer->fd);
-  if (kms_renderer->gbm == NULL)
+  kms_renderer->card_device.gbm = gbm_create_device (kms_renderer->card_device.fd);
+  if (kms_renderer->card_device.gbm == NULL)
     {
       _cogl_set_error (error, COGL_WINSYS_ERROR,
                    COGL_WINSYS_ERROR_INIT,
@@ -341,7 +345,7 @@ _cogl_winsys_renderer_connect (CoglRenderer *renderer,
       goto fail;
     }
 
-  egl_renderer->edpy = eglGetDisplay ((EGLNativeDisplayType)kms_renderer->gbm);
+  egl_renderer->edpy = eglGetDisplay ((EGLNativeDisplayType)kms_renderer->card_device.gbm);
   if (egl_renderer->edpy == EGL_NO_DISPLAY)
     {
       _cogl_set_error (error, COGL_WINSYS_ERROR,
@@ -354,7 +358,7 @@ _cogl_winsys_renderer_connect (CoglRenderer *renderer,
     goto fail;
 
   _cogl_poll_renderer_add_fd (renderer,
-                              kms_renderer->fd,
+                              kms_renderer->card_device.fd,
                               COGL_POLL_FD_EVENT_IN,
                               NULL, /* no prepare callback */
                               dispatch_kms_events,
@@ -566,7 +570,7 @@ setup_crtc_modes (CoglDisplay *display, int fb_id)
     {
       CoglKmsCrtc *crtc = l->data;
 
-      int ret = drmModeSetCrtc (kms_renderer->fd,
+      int ret = drmModeSetCrtc (kms_renderer->card_device.fd,
                                 crtc->id,
                                 fb_id, crtc->x, crtc->y,
                                 crtc->connectors, crtc->count,
@@ -598,7 +602,7 @@ flip_all_crtcs (CoglDisplay *display, CoglFlipKMS *flip, int fb_id)
 
       if (!kms_renderer->page_flips_not_supported)
         {
-          ret = drmModePageFlip (kms_renderer->fd,
+          ret = drmModePageFlip (kms_renderer->card_device.fd,
                                  crtc->id, fb_id,
                                  DRM_MODE_PAGE_FLIP_EVENT, flip);
           if (ret)
@@ -652,7 +656,7 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
   kms_display = g_slice_new0 (CoglDisplayKMS);
   egl_display->platform = kms_display;
 
-  resources = drmModeGetResources (kms_renderer->fd);
+  resources = drmModeGetResources (kms_renderer->card_device.fd);
   if (!resources)
     {
       _cogl_set_error (error, COGL_WINSYS_ERROR,
@@ -662,7 +666,7 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
     }
 
   output0 = find_output (0,
-                         kms_renderer->fd,
+                         kms_renderer->card_device.fd,
                          resources,
                          NULL,
                          0, /* n excluded connectors */
@@ -681,7 +685,7 @@ _cogl_winsys_egl_display_setup (CoglDisplay *display,
     {
       int exclude_connector = output0->connector->connector_id;
       output1 = find_output (1,
-                             kms_renderer->fd,
+                             kms_renderer->card_device.fd,
                              resources,
                              &exclude_connector,
                              1, /* n excluded connectors */
@@ -781,7 +785,7 @@ _cogl_winsys_egl_display_destroy (CoglDisplay *display)
   GList *l;
 
   for (l = kms_display->outputs; l; l = l->next)
-    output_free (kms_renderer->fd, l->data);
+    output_free (kms_renderer->card_device.fd, l->data);
   g_list_free (kms_display->outputs);
   kms_display->outputs = NULL;
 
@@ -804,7 +808,7 @@ _cogl_winsys_egl_context_created (CoglDisplay *display,
        COGL_EGL_WINSYS_FEATURE_SURFACELESS_CONTEXT) == 0)
     {
       kms_display->dummy_gbm_surface =
-        gbm_surface_create (kms_renderer->gbm,
+        gbm_surface_create (kms_renderer->card_device.gbm,
                             16, 16,
                             GBM_FORMAT_XRGB8888,
                             GBM_BO_USE_RENDERING);
@@ -912,7 +916,7 @@ _cogl_winsys_onscreen_swap_buffers_with_damage (CoglOnscreen *onscreen,
   stride = gbm_bo_get_stride (kms_onscreen->next_bo);
   handle = gbm_bo_get_handle (kms_onscreen->next_bo).u32;
 
-  if (drmModeAddFB (kms_renderer->fd,
+  if (drmModeAddFB (kms_renderer->card_device.fd,
                     kms_display->width,
                     kms_display->height,
                     24, /* depth */
@@ -944,7 +948,7 @@ _cogl_winsys_onscreen_swap_buffers_with_damage (CoglOnscreen *onscreen,
 
   if (flip->pending == 0)
     {
-      drmModeRmFB (kms_renderer->fd, kms_onscreen->next_fb_id);
+      drmModeRmFB (kms_renderer->card_device.fd, kms_onscreen->next_fb_id);
       gbm_surface_release_buffer (kms_onscreen->surface,
                                   kms_onscreen->next_bo);
       kms_onscreen->next_bo = NULL;
@@ -1019,7 +1023,7 @@ _cogl_winsys_onscreen_init (CoglOnscreen *onscreen,
   egl_onscreen->platform = kms_onscreen;
 
   kms_onscreen->surface =
-    gbm_surface_create (kms_renderer->gbm,
+    gbm_surface_create (kms_renderer->card_device.gbm,
                         kms_display->width,
                         kms_display->height,
                         GBM_FORMAT_XRGB8888,
@@ -1161,7 +1165,7 @@ cogl_kms_renderer_get_gbm (CoglRenderer *renderer)
     {
       CoglRendererEGL *egl_renderer = renderer->winsys;
       CoglRendererKMS *kms_renderer = egl_renderer->platform;
-      return kms_renderer->gbm;
+      return kms_renderer->card_device.gbm;
     }
     else
       return NULL;
@@ -1176,7 +1180,7 @@ cogl_kms_renderer_get_kms_fd (CoglRenderer *renderer)
     {
       CoglRendererEGL *egl_renderer = renderer->winsys;
       CoglRendererKMS *kms_renderer = egl_renderer->platform;
-      return kms_renderer->fd;
+      return kms_renderer->card_device.fd;
     }
   else
     return -1;
@@ -1220,7 +1224,7 @@ cogl_kms_display_set_layout (CoglDisplay *display,
 
       /* Need to drop the GBM surface and create a new one */
 
-      new_surface = gbm_surface_create (kms_renderer->gbm,
+      new_surface = gbm_surface_create (kms_renderer->card_device.gbm,
                                         width, height,
                                         GBM_FORMAT_XRGB8888,
                                         GBM_BO_USE_SCANOUT |
