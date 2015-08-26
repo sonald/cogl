@@ -1023,7 +1023,7 @@ _cogl_winsys_onscreen_init (CoglOnscreen *onscreen,
     gbm_surface_create (kms_renderer->gbm,
                         kms_display->width,
                         kms_display->height,
-                        GBM_BO_FORMAT_XRGB8888,
+                        GBM_FORMAT_XRGB8888,
                         GBM_BO_USE_SCANOUT |
                         GBM_BO_USE_RENDERING);
 
@@ -1223,7 +1223,7 @@ cogl_kms_display_set_layout (CoglDisplay *display,
 
       new_surface = gbm_surface_create (kms_renderer->gbm,
                                         width, height,
-                                        GBM_BO_FORMAT_XRGB8888,
+                                        GBM_FORMAT_XRGB8888,
                                         GBM_BO_USE_SCANOUT |
                                         GBM_BO_USE_RENDERING);
 
