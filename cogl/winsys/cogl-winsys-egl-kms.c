@@ -910,13 +910,7 @@ _cogl_winsys_onscreen_swap_buffers_with_damage (CoglOnscreen *onscreen,
     }
   /* Now we need to set the CRTC to whatever is the front buffer */
   kms_onscreen->next_bo = gbm_surface_lock_front_buffer (kms_onscreen->surface);
-
-#if (COGL_VERSION_ENCODE (COGL_GBM_MAJOR, COGL_GBM_MINOR, COGL_GBM_MICRO) >= \
-     COGL_VERSION_ENCODE (8, 1, 0))
   stride = gbm_bo_get_stride (kms_onscreen->next_bo);
-#else
-  stride = gbm_bo_get_pitch (kms_onscreen->next_bo);
-#endif
   handle = gbm_bo_get_handle (kms_onscreen->next_bo).u32;
 
   if (drmModeAddFB (kms_renderer->fd,
