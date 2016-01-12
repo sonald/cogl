@@ -164,7 +164,6 @@ cogl_renderer_new (void);
  * @COGL_WINSYS_ID_EGL_NULL: Use EGL with the PowerVR NULL window system
  * @COGL_WINSYS_ID_EGL_WAYLAND: Use EGL with the Wayland window system
  * @COGL_WINSYS_ID_EGL_KMS: Use EGL with the KMS platform
- * @COGL_WINSYS_ID_EGL_ANDROID: Use EGL with the Android platform
  *
  * Identifies specific window system backends that Cogl supports.
  *
@@ -180,7 +179,6 @@ typedef enum
   COGL_WINSYS_ID_EGL_NULL,
   COGL_WINSYS_ID_EGL_WAYLAND,
   COGL_WINSYS_ID_EGL_KMS,
-  COGL_WINSYS_ID_EGL_ANDROID,
 } CoglWinsysID;
 
 /**
