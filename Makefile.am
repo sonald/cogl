@@ -14,10 +14,6 @@ if BUILD_COGL_GLES2
 SUBDIRS += cogl-gles2
 endif
 
-if BUILD_COGL_GST
-SUBDIRS += cogl-gst
-endif
-
 SUBDIRS += po build
 
 ACLOCAL_AMFLAGS = -I build/autotools ${ACLOCAL_FLAGS}
