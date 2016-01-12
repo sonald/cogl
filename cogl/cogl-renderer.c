@@ -72,9 +72,6 @@
 #ifdef COGL_HAS_WGL_SUPPORT
 #include "cogl-winsys-wgl-private.h"
 #endif
-#ifdef COGL_HAS_SDL_SUPPORT
-#include "cogl-winsys-sdl-private.h"
-#endif
 
 #ifdef COGL_HAS_XLIB_SUPPORT
 #include "cogl-xlib-renderer.h"
@@ -212,9 +209,6 @@ static CoglWinsysVtableGetter _cogl_winsys_vtable_getters[] =
 #endif
 #ifdef COGL_HAS_WGL_SUPPORT
   _cogl_winsys_wgl_get_vtable,
-#endif
-#ifdef COGL_HAS_SDL_SUPPORT
-  _cogl_winsys_sdl_get_vtable,
 #endif
   _cogl_winsys_stub_get_vtable,
 };
