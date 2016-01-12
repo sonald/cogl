@@ -158,21 +158,6 @@ static CoglDriverDescription _cogl_drivers[] =
     COGL_GLES1_LIBNAME,
   },
 #endif
-#ifdef USING_EMSCRIPTEN
-  {
-    COGL_DRIVER_WEBGL,
-    "webgl",
-    0,
-    { COGL_PRIVATE_FEATURE_ANY_GL,
-      COGL_PRIVATE_FEATURE_GL_EMBEDDED,
-      COGL_PRIVATE_FEATURE_GL_PROGRAMMABLE,
-      COGL_PRIVATE_FEATURE_GL_WEB,
-      -1 },
-    &_cogl_driver_gles,
-    &_cogl_texture_driver_gles,
-    NULL,
-  },
-#endif
   {
     COGL_DRIVER_NOP,
     "nop",
