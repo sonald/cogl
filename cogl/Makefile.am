@@ -449,15 +449,6 @@ cogl_sources_c += \
 	winsys/cogl-winsys-glx-private.h \
 	winsys/cogl-winsys-glx.c
 endif
-if SUPPORT_WGL
-cogl_experimental_h += cogl-win32-renderer.h
-
-cogl_sources_c += \
-	cogl-win32-renderer.c \
-	winsys/cogl-winsys-wgl-private.h \
-	winsys/cogl-winsys-wgl.c \
-	winsys/cogl-winsys-wgl-feature-functions.h
-endif
 if SUPPORT_WAYLAND_EGL_SERVER
 cogl_experimental_h += cogl-wayland-server.h
 endif
