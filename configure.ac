@@ -788,29 +788,6 @@ AM_CONDITIONAL(SUPPORT_GLX, [test "x$SUPPORT_GLX" = "xyes"])
 EGL_PLATFORM_COUNT=0
 
 AC_ARG_ENABLE(
-  [wayland-egl-platform],
-  [AC_HELP_STRING([--enable-wayland-egl-platform=@<:@no/yes@:>@], [Enable support for the Wayland egl platform @<:@default=no@:>@])],
-  [],
-  enable_wayland_egl_platform=no
-)
-AS_IF([test "x$enable_wayland_egl_platform" = "xyes"],
-      [
-        EGL_PLATFORM_COUNT=$((EGL_PLATFORM_COUNT+1))
-        NEED_EGL=yes
-        EGL_PLATFORMS="$EGL_PLATFORMS wayland"
-
-        PKG_CHECK_MODULES(WAYLAND_CLIENT,
-                          [wayland-egl >= wayland_req_version wayland-client >= wayland_req_version])
-        COGL_PKG_REQUIRES="$COGL_PKG_REQUIRES wayland-egl >= wayland_req_version"
-        COGL_PKG_REQUIRES="$COGL_PKG_REQUIRES wayland-client >= wayland_req_version"
-
-        COGL_DEFINES_SYMBOLS="$COGL_DEFINES_SYMBOLS COGL_HAS_EGL_PLATFORM_WAYLAND_SUPPORT"
-      ])
-AM_CONDITIONAL(SUPPORT_EGL_PLATFORM_WAYLAND,
-               [test "x$enable_wayland_egl_platform" = "xyes"])
-
-
-AC_ARG_ENABLE(
   [kms-egl-platform],
   [AC_HELP_STRING([--enable-kms-egl-platform=@<:@no/yes@:>@], [Enable support for the KMS egl platform @<:@default=no@:>@])],
   [],
