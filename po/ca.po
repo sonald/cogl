@@ -105,7 +105,7 @@ msgstr "Traça els lots"
 
 #: ../cogl/cogl-debug-options.h:53
 msgid "Show how geometry is being batched in the journal"
-msgstr "Mostra com la geometria és tracta per lots en el diari"
+msgstr "Mostra com la geometria es tracta per lots en el diari"
 
 #: ../cogl/cogl-debug-options.h:57
 msgid "Trace matrices"
