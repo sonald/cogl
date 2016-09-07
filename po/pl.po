@@ -7,10 +7,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: cogl\n"
-"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
-"product=clutter\n"
-"POT-Creation-Date: 2016-08-02 14:46+0000\n"
-"PO-Revision-Date: 2016-08-22 21:02+0200\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-08-22 19:04+0000\n"
+"PO-Revision-Date: 2016-09-07 04:20+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -30,7 +29,7 @@ msgstr "Specjalne wartości debugowania:"
 
 #: cogl/cogl-debug.c:187 cogl/cogl-debug.c:189
 msgid "Enables all non-behavioural debug options"
-msgstr "Włącza wszystkie opcje debugowania nie wpływające na zachowanie"
+msgstr "Włącza wszystkie opcje debugowania niewpływające na zachowanie"
 
 #: cogl/cogl-debug.c:196
 msgid "Additional environment variables:"
