@@ -13,14 +13,14 @@ AM_CFLAGS = \
 	-DCOGL_ENABLE_EXPERIMENTAL_2_0_API
 
 if INSTALL_EXAMPLES
-AM_CFLAGS += -DCOGL_EXAMPLES_DATA=\""$(pkgdatadir)/examples-data/"\"
+AM_CFLAGS += -DCOGL_EXAMPLES_DATA=\""$(datadir)/deepin-cogl/examples-data/"\"
 else
 AM_CFLAGS += -DCOGL_EXAMPLES_DATA=\""$(abs_top_srcdir)/examples/"\"
 endif
 
 common_ldadd = \
 	$(COGL_DEP_LIBS) \
-	$(top_builddir)/cogl/libcogl.la \
+	$(top_builddir)/cogl/libdeepin-cogl.la \
 	$(LIBM)
 
 if !USE_GLIB
@@ -34,7 +34,7 @@ cogl_info_LDADD = $(common_ldadd)
 
 if USE_GLIB
 programs += cogl-hello cogl-msaa cogl-gles2-context cogl-point-sprites cogl-stereo
-examples_datadir = $(pkgdatadir)/examples-data
+examples_datadir = $(datadir)/deepin-cogl/examples-data
 examples_data_DATA =
 
 cogl_hello_SOURCES = cogl-hello.c
@@ -49,7 +49,7 @@ cogl_stereo_LDADD = $(common_ldadd)
 if BUILD_COGL_PANGO
 programs += cogl-crate
 cogl_crate_SOURCES = cogl-crate.c
-cogl_crate_LDADD = $(common_ldadd) $(COGL_PANGO_DEP_LIBS) $(top_builddir)/cogl-pango/libcogl-pango.la
+cogl_crate_LDADD = $(common_ldadd) $(COGL_PANGO_DEP_LIBS) $(top_builddir)/cogl-pango/libdeepin-cogl-pango.la
 cogl_crate_CFLAGS = $(AM_CFLAGS) $(COGL_PANGO_DEP_CFLAGS)
 examples_data_DATA += crate.jpg
 endif
@@ -57,7 +57,7 @@ endif
 if BUILD_COGL_GST
 programs += cogl-basic-video-player
 cogl_basic_video_player_SOURCES = cogl-basic-video-player.c
-cogl_basic_video_player_LDADD = $(common_ldadd) $(COGL_GST_DEP_LIBS) $(top_builddir)/cogl-gst/libcogl-gst.la
+cogl_basic_video_player_LDADD = $(common_ldadd) $(COGL_GST_DEP_LIBS) $(top_builddir)/cogl-gst/libdeepin-cogl-gst.la
 cogl_basic_video_player_CFLAGS = $(AM_CFLAGS) $(COGL_GST_DEP_CFLAGS) -I$(top_builddir)/cogl-gst
 endif
 
@@ -83,7 +83,7 @@ if BUILD_COGL_GLES2
 programs += cogl-gles2-gears
 cogl_gles2_gears_SOURCES = cogl-gles2-gears.c
 cogl_gles2_gears_CFLAGS = -I$(top_srcdir)/cogl-gles2 $(AM_CFLAGS)
-cogl_gles2_gears_LDADD = $(common_ldadd) $(top_builddir)/cogl-gles2/libcogl-gles2.la
+cogl_gles2_gears_LDADD = $(common_ldadd) $(top_builddir)/cogl-gles2/libdeepin-cogl-gles2.la
 endif
 
 endif #USE_GLIB
@@ -115,7 +115,7 @@ cogl_sdl2_hello_LDADD = $(common_ldadd)
 endif
 
 if USING_EMSCRIPTEN
-%.html: %.o $(top_builddir)/cogl/.libs/libcogl2.so $(top_builddir)/deps/glib/.libs/libglib.a
+%.html: %.o $(top_builddir)/cogl/.libs/libdeepin-cogl2.so $(top_builddir)/deps/glib/.libs/libglib.a
 	$(CC) $(AM_CFLAGS) $(CFLAGS) --js-library $(top_srcdir)/examples/emscripten-example-js-library.js -o $@ $^
 
 all-local: $(addsuffix .html, $(programs))

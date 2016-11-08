@@ -1,0 +1,4 @@
+usr/lib/*/libdeepin-cogl-pango.so
+usr/lib/*/pkgconfig/deepin-cogl-pango-*
+usr/include/deepin-cogl/cogl-pango/
+usr/share/gir-1.0/DeepinCoglPango-*

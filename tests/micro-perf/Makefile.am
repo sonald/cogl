@@ -21,7 +21,7 @@ AM_CFLAGS = $(COGL_DEP_CFLAGS) $(COGL_EXTRA_CFLAGS)
 
 common_ldadd = \
 	$(COGL_DEP_LIBS) \
-	$(top_builddir)/cogl/libcogl.la \
+	$(top_builddir)/cogl/libdeepin-cogl.la \
 	$(LIBM)
 
 test_journal_SOURCES = test-journal.c

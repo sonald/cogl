@@ -1,0 +1,3 @@
+usr/lib/*/libdeepin-cogl-path.so
+usr/lib/*/pkgconfig/deepin-cogl-path-*.pc
+usr/include/deepin-cogl/cogl-path

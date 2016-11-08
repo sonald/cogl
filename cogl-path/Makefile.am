@@ -70,14 +70,14 @@ glib_enum_headers = $(source_1_x_h)
 include $(top_srcdir)/build/autotools/Makefile.am.enums
 endif
 
-lib_LTLIBRARIES = libcogl-path.la
+lib_LTLIBRARIES = libdeepin-cogl-path.la
 
-libcogl_path_la_SOURCES = $(source_c) $(source_h)
-nodist_libcogl_path_la_SOURCES = $(BUILT_SOURCES)
-libcogl_path_la_CFLAGS = $(COGL_DEP_CFLAGS) $(COGL_EXTRA_CFLAGS) $(MAINTAINER_CFLAGS)
-libcogl_path_la_LIBADD = $(top_builddir)/cogl/libcogl.la
-libcogl_path_la_LIBADD += $(COGL_DEP_LIBS) $(COGL_EXTRA_LDFLAGS)
-libcogl_path_la_LDFLAGS = \
+libdeepin_cogl_path_la_SOURCES = $(source_c) $(source_h)
+nodist_libdeepin_cogl_path_la_SOURCES = $(BUILT_SOURCES)
+libdeepin_cogl_path_la_CFLAGS = $(COGL_DEP_CFLAGS) $(COGL_EXTRA_CFLAGS) $(MAINTAINER_CFLAGS)
+libdeepin_cogl_path_la_LIBADD = $(top_builddir)/cogl/libdeepin-cogl.la
+libdeepin_cogl_path_la_LIBADD += $(COGL_DEP_LIBS) $(COGL_EXTRA_LDFLAGS)
+libdeepin_cogl_path_la_LDFLAGS = \
 	-export-dynamic \
 	-export-symbols-regex "^(cogl|cogl2)_(framebuffer|path|is|clip|[sg]et)_.*" \
 	-no-undefined \
@@ -86,7 +86,7 @@ libcogl_path_la_LDFLAGS = \
 
 AM_CPPFLAGS = \
 	-DCOGL_COMPILATION		\
-	-DG_LOG_DOMAIN=\"CoglPath\"	\
+	-DG_LOG_DOMAIN=\"DeepinCoglPath\"	\
 	-I$(srcdir)/tesselator		\
 	-I$(top_srcdir)/cogl		\
 	-I$(top_builddir)/cogl		\
@@ -94,7 +94,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)			\
 	-I$(top_builddir)
 
-cogl_pathheadersdir = $(includedir)/cogl/cogl-path
+cogl_pathheadersdir = $(includedir)/deepin-cogl/cogl-path
 cogl_pathheaders_HEADERS = $(source_h)
 if USE_GLIB
 nodist_cogl_pathheaders_HEADERS = cogl-path-enum-types.h
@@ -120,3 +120,10 @@ MSVC_PROJECT_SRCS = $(source_c)
 MSVC_PROJECT_EXCLUDES = dummy
 
 include $(top_srcdir)/build/Makefile-msvcproj.mak
+
+
+# rename files with prefix 'deepin-'
+install-data-hook:
+	mv $(DESTDIR)$(pkgconfigdir)/cogl-path-1.0.pc $(DESTDIR)$(pkgconfigdir)/deepin-cogl-path-1.0.pc
+	mv $(DESTDIR)$(pkgconfigdir)/cogl-path-2.0-experimental.pc $(DESTDIR)$(pkgconfigdir)/deepin-cogl-path-2.0-experimental.pc
+

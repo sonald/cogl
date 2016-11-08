@@ -1,0 +1,4 @@
+usr/lib/*/libdeepin-cogl-gst.so
+usr/lib/*/pkgconfig/deepin-cogl-gst*
+usr/include/deepin-cogl/cogl-gst/
+usr/share/gir-1.0/DeepinCoglGst-*

@@ -30,7 +30,7 @@ if !USE_GLIB
 endif
 
 AM_CPPFLAGS += \
-	-DG_LOG_DOMAIN=\"Cogl\" 	\
+	-DG_LOG_DOMAIN=\"DeepinCogl\" 	\
 	-DCOGL_COMPILATION		\
 	-DCOGL_GL_LIBNAME=\"$(COGL_GL_LIBNAME)\" \
 	-DCOGL_GLES1_LIBNAME=\"$(COGL_GLES1_LIBNAME)\" \
@@ -536,26 +536,26 @@ glib_enum_c = cogl-enum-types.c
 glib_enum_headers = $(cogl_1_public_h)
 include $(top_srcdir)/build/autotools/Makefile.am.enums
 
-lib_LTLIBRARIES += libcogl.la
+lib_LTLIBRARIES += libdeepin-cogl.la
 
-libcogl_la_LIBADD = $(LIBM) $(COGL_DEP_LIBS) $(COGL_EXTRA_LDFLAGS)
+libdeepin_cogl_la_LIBADD = $(LIBM) $(COGL_DEP_LIBS) $(COGL_EXTRA_LDFLAGS)
 if !USE_GLIB
-libcogl_la_LIBADD += $(top_builddir)/deps/glib/libglib.la
-libcogl_la_LIBADD += $(top_builddir)/deps/gmodule/libgmodule.la
+libdeepin_cogl_la_LIBADD += $(top_builddir)/deps/glib/libglib.la
+libdeepin_cogl_la_LIBADD += $(top_builddir)/deps/gmodule/libgmodule.la
 endif
 if UNIT_TESTS
-libcogl_la_LIBADD += $(top_builddir)/test-fixtures/libtest-fixtures.la
+libdeepin_cogl_la_LIBADD += $(top_builddir)/test-fixtures/libtest-fixtures.la
 endif
 # XXX: The aim is to eventually get rid of all private API exports
 # for cogl-pango.
-libcogl_la_LDFLAGS = \
+libdeepin_cogl_la_LDFLAGS = \
 	-no-undefined \
 	-version-info @COGL_LT_CURRENT@:@COGL_LT_REVISION@:@COGL_LT_AGE@ \
 	-export-dynamic \
 	-export-symbols-regex "^(cogl|_cogl_debug_flags|_cogl_atlas_new|_cogl_atlas_add_reorganize_callback|_cogl_atlas_reserve_space|_cogl_callback|_cogl_util_get_eye_planes_for_screen_poly|_cogl_atlas_texture_remove_reorganize_callback|_cogl_atlas_texture_add_reorganize_callback|_cogl_texture_get_format|_cogl_texture_foreach_sub_texture_in_region|_cogl_profile_trace_message|_cogl_context_get_default|_cogl_framebuffer_get_stencil_bits|_cogl_clip_stack_push_rectangle|_cogl_framebuffer_get_modelview_stack|_cogl_object_default_unref|_cogl_pipeline_foreach_layer_internal|_cogl_clip_stack_push_primitive|_cogl_buffer_unmap_for_fill_or_fallback|_cogl_framebuffer_draw_primitive|_cogl_debug_instances|_cogl_framebuffer_get_projection_stack|_cogl_pipeline_layer_get_texture|_cogl_buffer_map_for_fill_or_fallback|_cogl_texture_can_hardware_repeat|_cogl_pipeline_prune_to_n_layers|_cogl_primitive_draw|test_|unit_test_).*"
 
-libcogl_la_SOURCES = $(cogl_sources_c)
-nodist_libcogl_la_SOURCES = $(BUILT_SOURCES)
+libdeepin_cogl_la_SOURCES = $(cogl_sources_c)
+nodist_libdeepin_cogl_la_SOURCES = $(BUILT_SOURCES)
 
 # Cogl installed headers
 cogl_headers = \
@@ -564,14 +564,14 @@ cogl_headers = \
 	cogl-pango.h \
 	$(NULL)
 
-cogldeprecatedincludedir = $(includedir)/cogl/cogl/deprecated
+cogldeprecatedincludedir = $(includedir)/deepin-cogl/cogl/deprecated
 cogldeprecatedinclude_HEADERS = $(cogl_deprecated_h)
 
-coglincludedir = $(includedir)/cogl/cogl
+coglincludedir = $(includedir)/deepin-cogl/cogl
 coglinclude_HEADERS = $(cogl_headers) $(cogl_experimental_h)
 nodist_coglinclude_HEADERS = $(cogl_nodist_experimental_h) cogl-defines.h cogl-enum-types.h
 
-cogl_proto_includedir = $(includedir)/cogl/cogl/gl-prototypes
+cogl_proto_includedir = $(includedir)/deepin-cogl/cogl/gl-prototypes
 cogl_proto_include_HEADERS = $(cogl_gl_prototypes_h)
 
 dist-hook: ../build/win32/vs9/cogl.vcproj ../build/win32/vs10/cogl.vcxproj ../build/win32/vs10/cogl.vcxproj.filters ../build/win32/gen-enums.bat
@@ -667,21 +667,21 @@ DISTCLEANFILES += ../build/win32/vs9/cogl.vcproj ../build/win32/vs10/cogl.vcxpro
 INTROSPECTION_GIRS =
 
 if HAVE_INTROSPECTION
-Cogl-1.0.gir: libcogl.la Makefile
+Cogl-1.0.gir: libdeepin-cogl.la Makefile
 
 Cogl_1_0_gir_NAMESPACE = Cogl
 Cogl_1_0_gir_VERSION = 1.0
-Cogl_1_0_gir_LIBS = libcogl.la
+Cogl_1_0_gir_LIBS = libdeepin-cogl.la
 if UNIT_TESTS
 Cogl_1_0_gir_LIBS += $(top_builddir)/test-fixtures/libtest-fixtures.la
 endif
 Cogl_1_0_gir_FILES = $(cogl_1_public_h) cogl-enum-types.h
 
-Cogl-2.0.gir: libcogl.la Makefile
+Cogl-2.0.gir: libdeepin-cogl.la Makefile
 
 Cogl_2_0_gir_NAMESPACE = Cogl
 Cogl_2_0_gir_VERSION = 2.0
-Cogl_2_0_gir_LIBS = libcogl.la
+Cogl_2_0_gir_LIBS = libdeepin-cogl.la
 if UNIT_TESTS
 Cogl_2_0_gir_LIBS += $(top_builddir)/test-fixtures/libtest-fixtures.la
 endif
@@ -707,3 +707,16 @@ typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 CLEANFILES += $(gir_DATA) $(typelib_DATA)
 endif
+
+#rename files with prefix 'deepin-'
+install-data-hook:
+	mv $(DESTDIR)$(pkgconfigdir)/cogl-1.0.pc $(DESTDIR)$(pkgconfigdir)/deepin-cogl-1.0.pc
+	mv $(DESTDIR)$(pkgconfigdir)/cogl-gl-1.0.pc $(DESTDIR)$(pkgconfigdir)/deepin-cogl-gl-1.0.pc
+	mv $(DESTDIR)$(pkgconfigdir)/cogl-$(COGL_API_VERSION)-experimental.pc $(DESTDIR)$(pkgconfigdir)/deepin-cogl-$(COGL_API_VERSION)-experimental.pc
+	for gir in Cogl-1.0.gir Cogl-2.0.gir; do \
+		mv $(DESTDIR)$(datadir)/gir-1.0/$$gir $(DESTDIR)$(datadir)/gir-1.0/Deepin$$gir ; \
+	done
+	for typelib in Cogl-1.0.typelib Cogl-2.0.typelib; do \
+		mv $(DESTDIR)$(libdir)/girepository-1.0/$$typelib $(DESTDIR)$(libdir)/girepository-1.0/Deepin$$typelib ; \
+	done
+

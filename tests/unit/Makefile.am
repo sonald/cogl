@@ -19,7 +19,7 @@ wrappers: stamp-test-unit
 	@true
 stamp-test-unit: Makefile test-unit$(EXEEXT)
 	@mkdir -p wrappers
-	. $(top_builddir)/cogl/libcogl.la ; \
+	. $(top_builddir)/cogl/libdeepin-cogl.la ; \
 	  $(NM) $(top_builddir)/cogl/.libs/"$$dlname"| \
 	  grep '[DR] _\?unit_test_'|sed 's/.\+ [DR] _\?//' > unit-tests
 	@chmod +x $(top_srcdir)/tests/test-launcher.sh
@@ -72,7 +72,7 @@ AM_CPPFLAGS += \
 test_unit_CFLAGS = -g3 -O0 $(COGL_DEP_CFLAGS) $(COGL_EXTRA_CFLAGS)
 test_unit_LDADD = \
 	$(COGL_DEP_LIBS) \
-	$(top_builddir)/cogl/libcogl.la \
+	$(top_builddir)/cogl/libdeepin-cogl.la \
 	$(LIBM)
 if !USE_GLIB
 test_unit_LDADD += $(top_builddir)/deps/glib/libglib.la

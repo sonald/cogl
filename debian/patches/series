@@ -1,0 +1,5 @@
+0001-kms-winsys-don-t-wait-for-a-flip-when-page-flipping-.patch
+gl_Add_a_quirk_for_the_GLSL_version_to_use_on_AMD_v2.patch
+Use_better_vendor_strings_from_AMD.patch
+Add-GL_ARB_shader_texture_lod-support.patch
+0001-texture-Support-copy_sub_image.patch

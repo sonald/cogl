@@ -1,0 +1,6 @@
+usr/lib/*/libdeepin-cogl.so
+usr/lib/*/pkgconfig/deepin-cogl-gl-*
+usr/lib/*/pkgconfig/deepin-cogl-1.0.pc
+usr/lib/*/pkgconfig/deepin-cogl-2.0-experimental.pc
+usr/include/deepin-cogl/cogl
+usr/share/gir-1.0/Cogl-*

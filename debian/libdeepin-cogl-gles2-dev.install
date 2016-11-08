@@ -1,0 +1,4 @@
+usr/lib/*/libdeepin-cogl-gles2.so
+usr/lib/*/pkgconfig/deepin-cogl-gles2-1.0.pc
+usr/lib/*/pkgconfig/deepin-cogl-gles2-2.0-experimental.pc
+usr/include/deepin-cogl/cogl-gles2

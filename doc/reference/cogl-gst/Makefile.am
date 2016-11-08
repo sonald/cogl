@@ -88,8 +88,8 @@ AM_CPPFLAGS=\
 	$(COGL_GST_DEP_CFLAGS)
 
 GTKDOC_LIBS=\
-	$(top_builddir)/cogl/libcogl.la \
-	$(top_builddir)/cogl-gst/libcogl-gst.la \
+	$(top_builddir)/cogl/libdeepin-cogl.la \
+	$(top_builddir)/cogl-gst/libdeepin-cogl-gst.la \
 	$(COGL_DEP_LIBS) \
 	$(COGL_GST_DEP_LIBS)
 
